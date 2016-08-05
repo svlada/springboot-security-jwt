@@ -14,6 +14,7 @@ import com.svlada.security.config.JwtSettings;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.impl.DefaultClaims;
 import io.jsonwebtoken.lang.Collections;
 
 /**
@@ -39,24 +40,18 @@ public class JwtTokenFactory {
      * @param roles
      * @return
      */
-    public SafeJwtToken createSafeToken(UserContext userContext, final Collection<GrantedAuthority> roles) {
+    public SafeJwtToken createSafeToken(UserContext userContext) {
         if (StringUtils.isBlank(userContext.getUsername())) {
             throw new IllegalArgumentException("Cannot create JWT Token without username");
         }
 
-        if (Collections.isEmpty(roles)) {
-            throw new IllegalArgumentException("Cannot create JWT Token without roles");
-        }
-
         DateTime currentTime = new DateTime();
 
-        Claims claims = Jwts.claims();
-        claims.put("roles", AuthorityUtils.authorityListToSet(roles));
+        Claims claims = Jwts.claims().setSubject(userContext.getUsername());
 
         String token = Jwts.builder()
           .setClaims(claims)
           .setIssuer(settings.getTokenIssuer())
-          .setSubject(userContext.getUsername())
           .setIssuedAt(currentTime.toDate())
           .setExpiration(currentTime.plusMinutes(settings.getTokenExpirationTime()).toDate())
           .signWith(SignatureAlgorithm.HS512, settings.getTokenSigningKey())
@@ -64,6 +59,11 @@ public class JwtTokenFactory {
 
         return new SafeJwtToken(token, claims);
     }
+    
+    public SafeJwtToken createSafeToken(String token, Claims claims) {
+        return new SafeJwtToken(token, claims);
+    }
+    
 
     /**
      * Unsafe version of JWT token is created.

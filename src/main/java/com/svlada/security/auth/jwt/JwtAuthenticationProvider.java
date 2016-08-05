@@ -1,9 +1,12 @@
 package com.svlada.security.auth.jwt;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.joda.time.DateTime;
+import org.joda.time.Minutes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -17,10 +20,14 @@ import com.svlada.security.auth.JwtAuthenticationToken;
 import com.svlada.security.config.JwtSettings;
 import com.svlada.security.exceptions.JwtExpiredTokenException;
 import com.svlada.security.model.JwtToken;
+import com.svlada.security.model.SafeJwtToken;
 import com.svlada.security.model.UnsafeJwtToken;
+import com.svlada.security.model.UserContext;
+import com.svlada.security.service.UserService;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureException;
 import io.jsonwebtoken.UnsupportedJwtException;
@@ -35,36 +42,37 @@ import io.jsonwebtoken.UnsupportedJwtException;
  */
 @Component
 public class JwtAuthenticationProvider implements AuthenticationProvider {
-    private final JwtSettings jwtSettings;
-    private final TokenAuthStrategy tokenAuthStrategy; 
+    private final TokenAuthStrategy tokenAuthStrategy;
+    private final UserService userService;
+    private final JwtSettings jwtSettings;    
     
     @Autowired
-    public JwtAuthenticationProvider(JwtSettings jwtSettings, TokenAuthStrategy tokenAuthStrategy) {
-        this.jwtSettings = jwtSettings;
+    public JwtAuthenticationProvider(TokenAuthStrategy tokenAuthStrategy, UserService userService, JwtSettings jwtSettings) {
         this.tokenAuthStrategy = tokenAuthStrategy;
+        this.userService = userService;
+        this.jwtSettings = jwtSettings;
     }
     
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        UnsafeJwtToken token = ((JwtAuthenticationToken) authentication).getUnsafeToken();
-
-        SafeToken safeToken = token.authenticate(tokenAuthStrategy);
+        UnsafeJwtToken unsafeToken = ((JwtAuthenticationToken) authentication).getUnsafeToken();
         
         try {
-            token.validateToken(jwtSettings.getTokenSigningKey());
+            Jws<Claims> jwsClaims = unsafeToken.parse(jwtSettings.getTokenSigningKey());
         } catch (UnsupportedJwtException | MalformedJwtException | IllegalArgumentException | SignatureException ex) {
             throw new BadCredentialsException("Invalid JWT token: ", ex);
         } catch (ExpiredJwtException expiredEx) {
-            throw new JwtExpiredTokenException(token, "Token expired.", expiredEx);
-        }
+            Date expDateTime = expiredEx.getClaims().getExpiration();
+            
+            if (expDate != null && tokenAuthStrategy.isExpired(expDate)) {
+                
+            }
+        } 
 
-        Claims claims = token.claims(jwtSettings.getTokenSigningKey());
-        ArrayList<String> rawAuthorities = claims.get("roles", ArrayList.class);
-
-        List<GrantedAuthority> authorities = rawAuthorities.stream()
-                .map(authority -> new SimpleGrantedAuthority(authority)).collect(Collectors.toList());
-
-        JwtAuthenticationToken authToken = new JwtAuthenticationToken(token, authorities, claims.getSubject());
+        SafeJwtToken safeToken = ;
+        Claims claims = safeToken.getClaims();
+        
+        JwtAuthenticationToken authToken = new JwtAuthenticationToken(userContext, safeToken, userContext.getAuthorities());
 
         return authToken;
     }

@@ -21,6 +21,19 @@ public class JwtSettings {
      */
     private String tokenSigningKey;
     
+    /**
+     * {@link JwtToken} can be refreshed during this timeframe.
+     */
+    private Integer tokenValidationTimeframe;
+    
+    public Integer getTokenValidationTimeframe() {
+        return tokenValidationTimeframe;
+    }
+
+    public void setTokenValidationTimeframe(Integer tokenValidationTimeframe) {
+        this.tokenValidationTimeframe = tokenValidationTimeframe;
+    }
+
     public Integer getTokenExpirationTime() {
         return tokenExpirationTime;
     }

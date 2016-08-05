@@ -413,7 +413,7 @@ public class AjaxAwareAuthenticationFailureHandler implements AuthenticationFail
 
 #### WebSecurityConfig - Initial version to support AJAX based login
 
-This is first version of WebSecurityConfig. We will add more configuration to it once we start with showcase of JWT Authentication flow. 
+This is first version of WebSecurityConfig. We will add more configuration to it once we start with showcase of JWT Authentication flow.
 
 ```
 @Configuration

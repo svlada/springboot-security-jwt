@@ -22,6 +22,12 @@ public class UserService {
     public UserContext loadUser(String username, String password) {
         List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
         authorities.add(new SimpleGrantedAuthority(UserRole.ADMIN.authority()));
-        return new UserContext(username, "svlada@gmail.com", authorities);
+        return new UserContext(username, authorities);
+    }
+    
+    public UserContext loadUser(String username) {
+        List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
+        authorities.add(new SimpleGrantedAuthority(UserRole.ADMIN.authority()));
+        return new UserContext(username, authorities);
     }
 }

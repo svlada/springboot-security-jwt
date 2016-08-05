@@ -1,6 +1,7 @@
 package com.svlada.security.auth.jwt;
 
 import com.svlada.security.model.SafeJwtToken;
+import com.svlada.security.model.UnsafeJwtToken;
 
 /**
  * 
@@ -9,5 +10,5 @@ import com.svlada.security.model.SafeJwtToken;
  * Aug 5, 2016
  */
 public interface TokenAuthStrategy {
-    public SafeJwtToken authenticate(String token);
+    public SafeJwtToken authenticate(UnsafeJwtToken token);
 }
