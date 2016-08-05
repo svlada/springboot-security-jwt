@@ -1,5 +1,7 @@
 package com.svlada.security.model;
 
+import com.svlada.security.auth.jwt.TokenAuthStrategy;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 
@@ -26,6 +28,10 @@ public class UnsafeJwtToken implements JwtToken {
      */
     public Claims parseClaims(String signingKey) {
         return Jwts.parser().setSigningKey(signingKey).parseClaimsJws(token).getBody();
+    }
+    
+    public SafeJwtToken authenticate(TokenAuthStrategy strategy) {
+        return strategy.authenticate(this.token);
     }
     
     @Override
