@@ -474,8 +474,29 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
 
 
-
-
 ## References
 
-[Spring Security Architecture - Dave Syer](https://github.com/dsyer/spring-security-architecture)
+### [Spring Security Architecture - Dave Syer](https://github.com/dsyer/spring-security-architecture)
+
+### [](http://stackoverflow.com/questions/21978658/invalidating-json-web-tokens/36884683#36884683)
+
+### [](http://stackoverflow.com/questions/38557379/secure-and-stateless-jwt-implementation)
+
+http://stackoverflow.com/questions/3487991/why-does-oauth-v2-have-both-access-and-refresh-tokens/12885823
+
+https://tools.ietf.org/html/rfc6749#section-1.4
+
+Keep user identity in the JWT but not user roles.
+
+Loosing a JWT token is like loosing your house keys. 
+
+https://www.dinochiesa.net/?p=1388
+
+http://by.jtl.xyz/2016/06/the-unspoken-vulnerability-of-jwts.html
+
+true statelessness and revocation are mutually exclusive
+
+
+https://www.sslvpn.online/are-breaches-of-jwt-based-servers-more-damaging/
+
+http://nordicapis.com/how-to-control-user-identity-within-microservices/

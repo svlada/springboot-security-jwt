@@ -1,12 +1,8 @@
 package com.svlada.security.model;
 
-import java.util.Collection;
-
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.stereotype.Component;
 
 import com.svlada.security.config.JwtSettings;
@@ -14,8 +10,6 @@ import com.svlada.security.config.JwtSettings;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.impl.DefaultClaims;
-import io.jsonwebtoken.lang.Collections;
 
 /**
  * Factory class that should be always used to create {@link JwtToken}.
@@ -58,6 +52,10 @@ public class JwtTokenFactory {
         .compact();
 
         return new SafeJwtToken(token, claims);
+    }
+    
+    public SafeJwtToken refreshToken(SafeJwtToken safeJwtToken) {
+        return null;
     }
     
     public SafeJwtToken createSafeToken(String token, Claims claims) {

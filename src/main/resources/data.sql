@@ -1,0 +1,1 @@
+insert into APP_USER(ID, PASSWORD, ROLE, USERNAME) values(1, 'test', 'ADMIN', 'svlada@gmail.com');

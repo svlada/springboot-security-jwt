@@ -32,8 +32,7 @@ public class JwtAuthenticationToken extends AbstractAuthenticationToken {
         this.setAuthenticated(false);
     }
 
-    public JwtAuthenticationToken(UserContext userContext, SafeJwtToken token,
-            Collection<? extends GrantedAuthority> authorities) {
+    public JwtAuthenticationToken(UserContext userContext, SafeJwtToken token, Collection<? extends GrantedAuthority> authorities) {
         super(authorities);
         this.safeToken = token;
         this.userContext = userContext;

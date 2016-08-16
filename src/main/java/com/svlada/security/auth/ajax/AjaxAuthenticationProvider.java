@@ -40,7 +40,7 @@ public class AjaxAuthenticationProvider implements AuthenticationProvider {
 
         UserContext userContext = userService.loadUser(username, password);
 
-        SafeJwtToken safeJwtToken = tokenFactory.createSafeToken(userContext, userContext.getAuthorities());
+        SafeJwtToken safeJwtToken = tokenFactory.createSafeToken(userContext);
 
         return new JwtAuthenticationToken(userContext, safeJwtToken, userContext.getAuthorities());
     }
