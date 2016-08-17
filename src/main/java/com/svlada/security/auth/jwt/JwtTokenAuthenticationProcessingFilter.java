@@ -8,16 +8,17 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import com.svlada.security.auth.JwtAuthenticationToken;
 import com.svlada.security.auth.jwt.extractor.TokenExtractor;
+import com.svlada.security.config.WebSecurityConfig;
 import com.svlada.security.model.JwtTokenFactory;
 import com.svlada.security.model.UnsafeJwtToken;
 
@@ -36,9 +37,9 @@ public class JwtTokenAuthenticationProcessingFilter extends AbstractAuthenticati
     @Autowired
     public JwtTokenAuthenticationProcessingFilter(AuthenticationFailureHandler failureHandler, 
             JwtTokenFactory tokenFactory,
-            @Qualifier("jwtHeaderTokenExtractor") TokenExtractor tokenExtractor,
-            String defaultFilterProcessesUrl) {
-        super(defaultFilterProcessesUrl);
+            TokenExtractor tokenExtractor,
+            RequestMatcher requestMatcher) {
+        super(requestMatcher);
         this.failureHandler = failureHandler;
         this.tokenExtractor = tokenExtractor;
         this.tokenFactory = tokenFactory;
@@ -47,7 +48,7 @@ public class JwtTokenAuthenticationProcessingFilter extends AbstractAuthenticati
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException, IOException, ServletException {
-        String tokenPayload = request.getHeader("X-Authorization");
+        String tokenPayload = request.getHeader(WebSecurityConfig.JWT_TOKEN_HEADER_PARAM);
         UnsafeJwtToken token = tokenFactory.createUnsafeToken(tokenExtractor.extract(tokenPayload));
         return getAuthenticationManager().authenticate(new JwtAuthenticationToken(token));
     }

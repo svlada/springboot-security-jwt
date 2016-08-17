@@ -8,11 +8,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
-import com.svlada.security.auth.JwtAuthenticationToken;
-import com.svlada.security.model.JwtTokenFactory;
-import com.svlada.security.model.SafeJwtToken;
 import com.svlada.security.model.UserContext;
-import com.svlada.security.service.UserService;
+import com.svlada.user.service.DatabaseUserService;
 
 /**
  * 
@@ -22,12 +19,11 @@ import com.svlada.security.service.UserService;
  */
 @Component
 public class AjaxAuthenticationProvider implements AuthenticationProvider {
-    private final JwtTokenFactory tokenFactory;
-    private final UserService userService;
+    
+    private final DatabaseUserService userService;
     
     @Autowired
-    public AjaxAuthenticationProvider(final JwtTokenFactory tokenFactory, final UserService userService) {
-        this.tokenFactory = tokenFactory;
+    public AjaxAuthenticationProvider(final DatabaseUserService userService) {
         this.userService = userService;
     }
 
@@ -38,11 +34,9 @@ public class AjaxAuthenticationProvider implements AuthenticationProvider {
         String username = (String) authentication.getPrincipal();
         String password = (String) authentication.getCredentials();
 
-        UserContext userContext = userService.loadUser(username, password);
+        UserContext userContext = userService.getByUsernameAndPassword(username, password);
 
-        SafeJwtToken safeJwtToken = tokenFactory.createSafeToken(userContext);
-
-        return new JwtAuthenticationToken(userContext, safeJwtToken, userContext.getAuthorities());
+        return new UsernamePasswordAuthenticationToken(userContext, null, userContext.getAuthorities());
     }
 
     @Override

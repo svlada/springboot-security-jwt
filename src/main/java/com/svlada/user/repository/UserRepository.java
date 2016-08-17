@@ -1,4 +1,4 @@
-package com.svlada.security.repository;
+package com.svlada.user.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

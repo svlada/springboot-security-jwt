@@ -24,14 +24,14 @@ public class JwtSettings {
     /**
      * {@link JwtToken} can be refreshed during this timeframe.
      */
-    private Integer tokenValidationTimeframe;
+    private Integer refreshTokenExpTime;
     
-    public Integer getTokenValidationTimeframe() {
-        return tokenValidationTimeframe;
+    public Integer getRefreshTokenExpTime() {
+        return refreshTokenExpTime;
     }
 
-    public void setTokenValidationTimeframe(Integer tokenValidationTimeframe) {
-        this.tokenValidationTimeframe = tokenValidationTimeframe;
+    public void setRefreshTokenExpTime(Integer refreshTokenExpTime) {
+        this.refreshTokenExpTime = refreshTokenExpTime;
     }
 
     public Integer getTokenExpirationTime() {

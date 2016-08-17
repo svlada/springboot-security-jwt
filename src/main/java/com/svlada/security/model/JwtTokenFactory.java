@@ -1,5 +1,7 @@
 package com.svlada.security.model;
 
+import java.util.UUID;
+
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +55,7 @@ public class JwtTokenFactory {
 
         return new SafeJwtToken(token, claims);
     }
-    
+
     public SafeJwtToken refreshToken(SafeJwtToken safeJwtToken) {
         return null;
     }
@@ -73,5 +75,26 @@ public class JwtTokenFactory {
      */
     public UnsafeJwtToken createUnsafeToken(String tokenPayload) {
         return new UnsafeJwtToken(tokenPayload);
+    }
+
+    public JwtToken createRefreshToken(UserContext userContext) {
+        if (StringUtils.isBlank(userContext.getUsername())) {
+            throw new IllegalArgumentException("Cannot create JWT Token without username");
+        }
+
+        DateTime currentTime = new DateTime();
+
+        Claims claims = Jwts.claims().setSubject(userContext.getUsername());
+        
+        String token = Jwts.builder()
+          .setClaims(claims)
+          .setIssuer(settings.getTokenIssuer())
+          .setId(UUID.randomUUID().toString())
+          .setIssuedAt(currentTime.toDate())
+          .setExpiration(currentTime.plusMinutes(settings.getRefreshTokenExpTime()).toDate())
+          .signWith(SignatureAlgorithm.HS512, settings.getTokenSigningKey())
+        .compact();
+
+        return new SafeJwtToken(token, claims);
     }
 }

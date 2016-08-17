@@ -16,10 +16,12 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.svlada.security.auth.JwtAuthenticationToken;
 import com.svlada.security.model.JwtToken;
+import com.svlada.security.model.JwtTokenFactory;
+import com.svlada.security.model.UserContext;
 
 /**
+ * AjaxAwareAuthenticationSuccessHandler
  * 
  * @author vladimir.stankovic
  *
@@ -28,16 +30,21 @@ import com.svlada.security.model.JwtToken;
 @Component
 public class AjaxAwareAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
     private final ObjectMapper mapper;
+    private final JwtTokenFactory tokenFactory;
 
     @Autowired
-    public AjaxAwareAuthenticationSuccessHandler(ObjectMapper mapper) {
+    public AjaxAwareAuthenticationSuccessHandler(final ObjectMapper mapper, final JwtTokenFactory tokenFactory) {
         this.mapper = mapper;
+        this.tokenFactory = tokenFactory;
     }
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
             Authentication authentication) throws IOException, ServletException {
-        JwtToken token = ((JwtAuthenticationToken) authentication).getSafeToken();
+        UserContext userContext = (UserContext) authentication.getPrincipal();
+        
+        JwtToken token = tokenFactory.createSafeToken(userContext);
+        JwtToken refreshToken = tokenFactory.createRefreshToken(userContext);
 
         response.setStatus(HttpStatus.OK.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
