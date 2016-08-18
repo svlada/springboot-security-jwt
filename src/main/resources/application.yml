@@ -1,7 +1,8 @@
 server.port: 9966
 spring.profiles: default
 demo.security.jwt:
-  tokenExpirationTime: 2 # Number of minutes
+  tokenExpirationTime: 15 # Number of minutes
+  refreshTokenExpTime: 60 # Minutes
   tokenIssuer: http://svlada.com
   tokenSigningKey: xm8EV6Hy5RMFK4EEACIDAwQus
   

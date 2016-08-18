@@ -1,6 +1,8 @@
 package com.svlada.security.model;
 
+import java.util.Arrays;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
@@ -40,11 +42,16 @@ public class JwtTokenFactory {
         if (StringUtils.isBlank(userContext.getUsername())) {
             throw new IllegalArgumentException("Cannot create JWT Token without username");
         }
-
-        DateTime currentTime = new DateTime();
+        
+        if (userContext.getAuthorities() == null || userContext.getAuthorities().isEmpty()) {
+            throw new IllegalArgumentException("User doesn't have any privileges");
+        }
 
         Claims claims = Jwts.claims().setSubject(userContext.getUsername());
+        claims.put("scopes", userContext.getAuthorities().stream().map(s -> s.toString()).collect(Collectors.toList()));
 
+        DateTime currentTime = new DateTime();
+        
         String token = Jwts.builder()
           .setClaims(claims)
           .setIssuer(settings.getTokenIssuer())
@@ -56,27 +63,6 @@ public class JwtTokenFactory {
         return new SafeJwtToken(token, claims);
     }
 
-    public SafeJwtToken refreshToken(SafeJwtToken safeJwtToken) {
-        return null;
-    }
-    
-    public SafeJwtToken createSafeToken(String token, Claims claims) {
-        return new SafeJwtToken(token, claims);
-    }
-    
-
-    /**
-     * Unsafe version of JWT token is created.
-     * 
-     * <strong>WARNING:</strong> Token signature validation is not performed.
-     * 
-     * @param tokenPayload
-     * @return unsafe version of JWT token.
-     */
-    public UnsafeJwtToken createUnsafeToken(String tokenPayload) {
-        return new UnsafeJwtToken(tokenPayload);
-    }
-
     public JwtToken createRefreshToken(UserContext userContext) {
         if (StringUtils.isBlank(userContext.getUsername())) {
             throw new IllegalArgumentException("Cannot create JWT Token without username");
@@ -85,6 +71,7 @@ public class JwtTokenFactory {
         DateTime currentTime = new DateTime();
 
         Claims claims = Jwts.claims().setSubject(userContext.getUsername());
+        claims.put("scopes", Arrays.asList(Scopes.REFRESH_TOKEN));
         
         String token = Jwts.builder()
           .setClaims(claims)
@@ -96,5 +83,17 @@ public class JwtTokenFactory {
         .compact();
 
         return new SafeJwtToken(token, claims);
+    }
+
+    /**
+     * Unsafe version of JWT token is created.
+     * 
+     * <strong>WARNING:</strong> Token signature validation is not performed.
+     * 
+     * @param tokenPayload
+     * @return unsafe version of JWT token.
+     */
+    public UnsafeJwtToken createUnsafeToken(String tokenPayload) {
+        return new UnsafeJwtToken(tokenPayload);
     }
 }

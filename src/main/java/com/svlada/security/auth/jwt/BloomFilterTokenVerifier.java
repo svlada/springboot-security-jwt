@@ -1,5 +1,7 @@
 package com.svlada.security.auth.jwt;
 
+import org.springframework.stereotype.Component;
+
 /**
  * BloomFilterTokenVerifier
  * 
@@ -7,6 +9,7 @@ package com.svlada.security.auth.jwt;
  *
  * Aug 17, 2016
  */
+@Component
 public class BloomFilterTokenVerifier implements TokenVerifier {
     @Override
     public boolean verify(String jti) {

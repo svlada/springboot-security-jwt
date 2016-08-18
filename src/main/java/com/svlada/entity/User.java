@@ -1,12 +1,14 @@
 package com.svlada.entity;
 
+import java.util.List;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 @Entity
@@ -22,15 +24,17 @@ public class User {
     @Column(name="password")
     private String password;
     
-    @Column(name="role")
-    @Enumerated(EnumType.STRING)
-    private Role role;
+    @OneToMany
+    @JoinColumn(name="APP_USER_ID", referencedColumnName="ID")
+    private List<UserRole> roles;
     
-    public User(Long id, String username, String password, Role role) {
+    public User() { }
+    
+    public User(Long id, String username, String password, List<UserRole> roles) {
         this.id = id;
         this.username = username;
         this.password = password;
-        this.role = role;
+        this.roles = roles;
     }
 
     public Long getId() {
@@ -45,7 +49,7 @@ public class User {
         return password;
     }
 
-    public Role getRole() {
-        return role;
+    public List<UserRole> getRoles() {
+        return roles;
     }
 }

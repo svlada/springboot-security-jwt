@@ -38,8 +38,8 @@ public class JwtTokenAuthenticationProcessingFilter extends AbstractAuthenticati
     public JwtTokenAuthenticationProcessingFilter(AuthenticationFailureHandler failureHandler, 
             JwtTokenFactory tokenFactory,
             TokenExtractor tokenExtractor,
-            RequestMatcher requestMatcher) {
-        super(requestMatcher);
+            String filterProcessingUrl) {
+        super(filterProcessingUrl);
         this.failureHandler = failureHandler;
         this.tokenExtractor = tokenExtractor;
         this.tokenFactory = tokenFactory;

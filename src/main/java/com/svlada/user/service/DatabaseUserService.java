@@ -1,16 +1,12 @@
 package com.svlada.user.service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 
+import com.svlada.entity.User;
 import com.svlada.security.UserService;
-import com.svlada.security.model.UserContext;
-import com.svlada.security.model.UserRole;
 import com.svlada.user.repository.UserRepository;
 
 /**
@@ -29,21 +25,12 @@ public class DatabaseUserService implements UserService {
         this.userRepository = userRepository;
     }
     
-    @Override
-    public UserContext getByUsernameAndPassword(String username, String password) {
-        List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
-        authorities.add(new SimpleGrantedAuthority(UserRole.ADMIN.authority()));
-        return new UserContext(username, authorities);
-    }
-    
-    @Override
-    public UserContext getByUsername(String username) {
-        List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
-        authorities.add(new SimpleGrantedAuthority(UserRole.ADMIN.authority()));
-        return new UserContext(username, authorities);
-    }
-
     public UserRepository getUserRepository() {
         return userRepository;
+    }
+
+    @Override
+    public Optional<User> getByUsername(String username) {
+        return this.userRepository.findByUsername(username);
     }
 }

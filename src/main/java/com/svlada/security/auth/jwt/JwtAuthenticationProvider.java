@@ -1,12 +1,16 @@
 package com.svlada.security.auth.jwt;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
-import com.svlada.security.UserService;
 import com.svlada.security.auth.JwtAuthenticationToken;
 import com.svlada.security.config.JwtSettings;
 import com.svlada.security.model.JwtToken;
@@ -25,13 +29,12 @@ import io.jsonwebtoken.Jws;
  * Aug 5, 2016
  */
 @Component
+@SuppressWarnings("unchecked")
 public class JwtAuthenticationProvider implements AuthenticationProvider {
-    private final UserService userService;
     private final JwtSettings jwtSettings;
     
     @Autowired
-    public JwtAuthenticationProvider(UserService userService, JwtSettings jwtSettings) {
-        this.userService = userService;
+    public JwtAuthenticationProvider(JwtSettings jwtSettings) {
         this.jwtSettings = jwtSettings;
     }
 
@@ -42,7 +45,13 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
         Jws<Claims> jwsClaims = unsafeToken.parseClaims(jwtSettings.getTokenSigningKey());
         String subject = jwsClaims.getBody().getSubject();
         
-        UserContext context = userService.getByUsername(subject);
+        List<String> scopes = jwsClaims.getBody().get("scopes", List.class);
+
+        List<GrantedAuthority> authorities = scopes.stream()
+                .map(authority -> new SimpleGrantedAuthority(authority))
+                .collect(Collectors.toList());
+        
+        UserContext context = UserContext.create(subject, authorities);
         
         return new JwtAuthenticationToken(context, context.getAuthorities());
     }

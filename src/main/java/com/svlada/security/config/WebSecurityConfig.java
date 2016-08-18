@@ -16,7 +16,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.svlada.security.RestAuthenticationEntryPoint;
-import com.svlada.security.auth.RefreshTokenRequestMatcher;
 import com.svlada.security.auth.ajax.AjaxAuthenticationProvider;
 import com.svlada.security.auth.ajax.AjaxLoginProcessingFilter;
 import com.svlada.security.auth.jwt.JwtAuthenticationProvider;
@@ -61,7 +60,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     
     @Bean
     protected JwtTokenAuthenticationProcessingFilter buildJwtTokenAuthenticationProcessingFilter() throws Exception {
-        JwtTokenAuthenticationProcessingFilter filter = new JwtTokenAuthenticationProcessingFilter(failureHandler, tokenFactory, tokenExtractor, new  RefreshTokenRequestMatcher());
+        JwtTokenAuthenticationProcessingFilter filter = new JwtTokenAuthenticationProcessingFilter(failureHandler, tokenFactory, tokenExtractor, TOKEN_BASED_AUTH_ENTRY_POINT);
         filter.setAuthenticationManager(this.authenticationManager);
         return filter;
     }
@@ -95,8 +94,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
         .and()
             .authorizeRequests()
-            .antMatchers(FORM_BASED_LOGIN_ENTRY_POINT).permitAll() // Login end-point
-            .antMatchers(TOKEN_REFRESH_ENTRY_POINT).permitAll() // Token refresh end-point
+                .antMatchers(FORM_BASED_LOGIN_ENTRY_POINT).permitAll() // Login end-point
+                .antMatchers(TOKEN_REFRESH_ENTRY_POINT).permitAll() // Token refresh end-point
+                .antMatchers("/console").permitAll() // H2 Console Dash-board - only for testing
+        .and()
+            .authorizeRequests()
+                .antMatchers(TOKEN_BASED_AUTH_ENTRY_POINT).authenticated() // Protected API End-points
         .and()
             .addFilterBefore(buildAjaxLoginProcessingFilter(), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(buildJwtTokenAuthenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class);

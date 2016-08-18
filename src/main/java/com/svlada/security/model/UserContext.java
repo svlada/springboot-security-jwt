@@ -1,8 +1,11 @@
 package com.svlada.security.model;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 /**
  * 
@@ -14,9 +17,14 @@ public class UserContext {
     private final String username;
     private final List<GrantedAuthority> authorities;
 
-    public UserContext(String username, List<GrantedAuthority> authorities) {
+    private UserContext(String username, List<GrantedAuthority> authorities) {
         this.username = username;
         this.authorities = authorities;
+    }
+    
+    public static UserContext create(String username, List<GrantedAuthority> authorities) {
+        if (StringUtils.isBlank(username)) throw new IllegalArgumentException("Username is blank: " + username);
+        return new UserContext(username, authorities);
     }
 
     public String getUsername() {
