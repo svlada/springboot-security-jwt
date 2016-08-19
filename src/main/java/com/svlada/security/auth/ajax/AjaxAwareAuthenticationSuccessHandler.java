@@ -1,6 +1,8 @@
 package com.svlada.security.auth.ajax;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -43,12 +45,16 @@ public class AjaxAwareAuthenticationSuccessHandler implements AuthenticationSucc
             Authentication authentication) throws IOException, ServletException {
         UserContext userContext = (UserContext) authentication.getPrincipal();
         
-        JwtToken token = tokenFactory.createAccessJwtToken(userContext);
+        JwtToken accessToken = tokenFactory.createAccessJwtToken(userContext);
         JwtToken refreshToken = tokenFactory.createRefreshToken(userContext);
+        
+        Map<String, String> tokenMap = new HashMap<String, String>();
+        tokenMap.put("token", accessToken.getToken());
+        tokenMap.put("refreshToken", refreshToken.getToken());
 
         response.setStatus(HttpStatus.OK.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        mapper.writeValue(response.getWriter(), token);
+        mapper.writeValue(response.getWriter(), tokenMap);
 
         clearAuthenticationAttributes(request);
     }

@@ -1,5 +1,8 @@
 package com.svlada.security.config;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,8 +23,8 @@ import com.svlada.security.auth.ajax.AjaxAuthenticationProvider;
 import com.svlada.security.auth.ajax.AjaxLoginProcessingFilter;
 import com.svlada.security.auth.jwt.JwtAuthenticationProvider;
 import com.svlada.security.auth.jwt.JwtTokenAuthenticationProcessingFilter;
+import com.svlada.security.auth.jwt.SkipPathRequestMatcher;
 import com.svlada.security.auth.jwt.extractor.TokenExtractor;
-import com.svlada.security.model.token.JwtTokenFactory;
 
 /**
  * WebSecurityConfig
@@ -45,12 +48,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired private JwtAuthenticationProvider jwtAuthenticationProvider;
     
     @Autowired private TokenExtractor tokenExtractor;
-    @Autowired private JwtTokenFactory tokenFactory;
-
+    
     @Autowired private AuthenticationManager authenticationManager;
     
     @Autowired private ObjectMapper objectMapper;
-    
+        
     @Bean
     protected AjaxLoginProcessingFilter buildAjaxLoginProcessingFilter() throws Exception {
         AjaxLoginProcessingFilter filter = new AjaxLoginProcessingFilter(FORM_BASED_LOGIN_ENTRY_POINT, successHandler, failureHandler, objectMapper);
@@ -60,7 +62,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     
     @Bean
     protected JwtTokenAuthenticationProcessingFilter buildJwtTokenAuthenticationProcessingFilter() throws Exception {
-        JwtTokenAuthenticationProcessingFilter filter = new JwtTokenAuthenticationProcessingFilter(failureHandler, tokenFactory, tokenExtractor, TOKEN_BASED_AUTH_ENTRY_POINT);
+        List<String> pathsToSkip = Arrays.asList(TOKEN_REFRESH_ENTRY_POINT, FORM_BASED_LOGIN_ENTRY_POINT);
+        SkipPathRequestMatcher matcher = new SkipPathRequestMatcher(pathsToSkip, TOKEN_BASED_AUTH_ENTRY_POINT);
+        JwtTokenAuthenticationProcessingFilter filter 
+            = new JwtTokenAuthenticationProcessingFilter(failureHandler, tokenExtractor, matcher);
         filter.setAuthenticationManager(this.authenticationManager);
         return filter;
     }

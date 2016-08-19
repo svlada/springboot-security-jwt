@@ -22,12 +22,12 @@ import io.jsonwebtoken.SignatureAlgorithm;
  * 
  * @author vladimir.stankovic
  *
- *         May 31, 2016
+ * May 31, 2016
  */
 @Component
 public class JwtTokenFactory {
     private final JwtSettings settings;
-    
+
     @Autowired
     public JwtTokenFactory(JwtSettings settings) {
         this.settings = settings;
@@ -43,7 +43,7 @@ public class JwtTokenFactory {
     public AccessJwtToken createAccessJwtToken(UserContext userContext) {
         if (StringUtils.isBlank(userContext.getUsername())) 
             throw new IllegalArgumentException("Cannot create JWT Token without username");
-        
+
         if (userContext.getAuthorities() == null || userContext.getAuthorities().isEmpty()) 
             throw new IllegalArgumentException("User doesn't have any privileges");
 
@@ -51,7 +51,7 @@ public class JwtTokenFactory {
         claims.put("scopes", userContext.getAuthorities().stream().map(s -> s.toString()).collect(Collectors.toList()));
 
         DateTime currentTime = new DateTime();
-        
+
         String token = Jwts.builder()
           .setClaims(claims)
           .setIssuer(settings.getTokenIssuer())
@@ -71,7 +71,7 @@ public class JwtTokenFactory {
         DateTime currentTime = new DateTime();
 
         Claims claims = Jwts.claims().setSubject(userContext.getUsername());
-        claims.put("scopes", Arrays.asList(Scopes.REFRESH_TOKEN));
+        claims.put("scopes", Arrays.asList(Scopes.REFRESH_TOKEN.authority()));
         
         String token = Jwts.builder()
           .setClaims(claims)

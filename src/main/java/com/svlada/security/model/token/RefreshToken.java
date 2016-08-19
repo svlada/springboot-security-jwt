@@ -12,18 +12,20 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 
 /**
+ * RefreshToken
  * 
  * @author vladimir.stankovic
  *
  * Aug 19, 2016
  */
+@SuppressWarnings("unchecked")
 public class RefreshToken implements JwtToken {
     private Jws<Claims> claims;
-    
+
     private RefreshToken(Jws<Claims> claims) {
         this.claims = claims;
     }
-    
+
     /**
      * Creates and validates Refresh token 
      * 
@@ -43,10 +45,10 @@ public class RefreshToken implements JwtToken {
                 || !scopes.stream().filter(scope -> Scopes.REFRESH_TOKEN.authority().equals(scope)).findFirst().isPresent()) {
             return Optional.empty();
         }
-        
+
         return Optional.of(new RefreshToken(claims));
     }
-    
+
     @Override
     public String getToken() {
         return null;

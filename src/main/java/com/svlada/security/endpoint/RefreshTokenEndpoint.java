@@ -5,10 +5,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.servlet.ServletException;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.svlada.entity.User;
 import com.svlada.security.UserService;
+import com.svlada.security.auth.jwt.extractor.TokenExtractor;
 import com.svlada.security.auth.jwt.verifier.TokenVerifier;
 import com.svlada.security.config.JwtSettings;
 import com.svlada.security.config.WebSecurityConfig;
@@ -44,12 +47,15 @@ public class RefreshTokenEndpoint {
     @Autowired private JwtSettings jwtSettings;
     @Autowired private UserService userService;
     @Autowired private TokenVerifier tokenVerifier;
+    @Autowired @Qualifier("jwtHeaderTokenExtractor") private TokenExtractor tokenExtractor;
     
     @RequestMapping(value="/api/auth/token", method=RequestMethod.GET, produces={ MediaType.APPLICATION_JSON_VALUE })
     public @ResponseBody JwtToken refreshToken(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        RawAccessJwtToken rawToken = new RawAccessJwtToken(request.getHeader(WebSecurityConfig.JWT_TOKEN_HEADER_PARAM));
-        RefreshToken refreshToken = RefreshToken.create(rawToken, jwtSettings.getTokenSigningKey()).orElseThrow(() -> new InvalidJwtToken());
+        String tokenPayload = tokenExtractor.extract(request.getHeader(WebSecurityConfig.JWT_TOKEN_HEADER_PARAM));
         
+        RawAccessJwtToken rawToken = new RawAccessJwtToken(tokenPayload);
+        RefreshToken refreshToken = RefreshToken.create(rawToken, jwtSettings.getTokenSigningKey()).orElseThrow(() -> new InvalidJwtToken());
+
         String jti = refreshToken.getJti();
         if (!tokenVerifier.verify(jti)) {
             throw new InvalidJwtToken();
