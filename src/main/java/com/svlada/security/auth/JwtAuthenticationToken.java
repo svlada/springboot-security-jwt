@@ -5,8 +5,8 @@ import java.util.Collection;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 
-import com.svlada.security.model.UnsafeJwtToken;
 import com.svlada.security.model.UserContext;
+import com.svlada.security.model.token.RawAccessJwtToken;
 
 /**
  * An {@link org.springframework.security.core.Authentication} implementation
@@ -19,18 +19,18 @@ import com.svlada.security.model.UserContext;
 public class JwtAuthenticationToken extends AbstractAuthenticationToken {
     private static final long serialVersionUID = 2877954820905567501L;
 
-    private UnsafeJwtToken unsafeToken;
+    private RawAccessJwtToken rawAccessToken;
     private UserContext userContext;
 
-    public JwtAuthenticationToken(UnsafeJwtToken unsafeToken) {
+    public JwtAuthenticationToken(RawAccessJwtToken unsafeToken) {
         super(null);
-        this.unsafeToken = unsafeToken;
+        this.rawAccessToken = unsafeToken;
         this.setAuthenticated(false);
     }
 
     public JwtAuthenticationToken(UserContext userContext, Collection<? extends GrantedAuthority> authorities) {
         super(authorities);
-        this.unsafeToken = null;
+        this.eraseCredentials();
         this.userContext = userContext;
         super.setAuthenticated(true);
     }
@@ -46,7 +46,7 @@ public class JwtAuthenticationToken extends AbstractAuthenticationToken {
 
     @Override
     public Object getCredentials() {
-        return unsafeToken;
+        return rawAccessToken;
     }
 
     @Override
@@ -57,6 +57,6 @@ public class JwtAuthenticationToken extends AbstractAuthenticationToken {
     @Override
     public void eraseCredentials() {        
         super.eraseCredentials();
-        this.unsafeToken = null;
+        this.rawAccessToken = null;
     }
 }

@@ -1,4 +1,4 @@
-package com.svlada.security.auth.jwt;
+package com.svlada.security.auth.jwt.verifier;
 
 /**
  * 

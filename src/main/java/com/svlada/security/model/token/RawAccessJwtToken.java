@@ -1,4 +1,4 @@
-package com.svlada.security.model;
+package com.svlada.security.model.token;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,12 +14,12 @@ import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureException;
 import io.jsonwebtoken.UnsupportedJwtException;
 
-public class UnsafeJwtToken implements JwtToken {
-    private static Logger logger = LoggerFactory.getLogger(UnsafeJwtToken.class);
+public class RawAccessJwtToken implements JwtToken {
+    private static Logger logger = LoggerFactory.getLogger(RawAccessJwtToken.class);
             
     private String token;
     
-    public UnsafeJwtToken(String token) {
+    public RawAccessJwtToken(String token) {
         this.token = token;
     }
 

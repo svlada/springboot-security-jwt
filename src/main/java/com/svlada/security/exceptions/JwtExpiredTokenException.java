@@ -2,7 +2,7 @@ package com.svlada.security.exceptions;
 
 import org.springframework.security.core.AuthenticationException;
 
-import com.svlada.security.model.JwtToken;
+import com.svlada.security.model.token.JwtToken;
 
 /**
  * 

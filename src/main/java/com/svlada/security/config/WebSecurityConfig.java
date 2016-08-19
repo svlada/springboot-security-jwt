@@ -21,7 +21,7 @@ import com.svlada.security.auth.ajax.AjaxLoginProcessingFilter;
 import com.svlada.security.auth.jwt.JwtAuthenticationProvider;
 import com.svlada.security.auth.jwt.JwtTokenAuthenticationProcessingFilter;
 import com.svlada.security.auth.jwt.extractor.TokenExtractor;
-import com.svlada.security.model.JwtTokenFactory;
+import com.svlada.security.model.token.JwtTokenFactory;
 
 /**
  * WebSecurityConfig

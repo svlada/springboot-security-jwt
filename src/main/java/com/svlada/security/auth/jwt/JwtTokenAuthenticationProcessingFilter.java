@@ -14,13 +14,11 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
-import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import com.svlada.security.auth.JwtAuthenticationToken;
 import com.svlada.security.auth.jwt.extractor.TokenExtractor;
 import com.svlada.security.config.WebSecurityConfig;
-import com.svlada.security.model.JwtTokenFactory;
-import com.svlada.security.model.UnsafeJwtToken;
+import com.svlada.security.model.token.RawAccessJwtToken;
 
 /**
  * Performs validation of provided JWT Token.
@@ -32,24 +30,21 @@ import com.svlada.security.model.UnsafeJwtToken;
 public class JwtTokenAuthenticationProcessingFilter extends AbstractAuthenticationProcessingFilter {
     private final AuthenticationFailureHandler failureHandler;
     private final TokenExtractor tokenExtractor;
-    private final JwtTokenFactory tokenFactory;
     
     @Autowired
     public JwtTokenAuthenticationProcessingFilter(AuthenticationFailureHandler failureHandler, 
-            JwtTokenFactory tokenFactory,
             TokenExtractor tokenExtractor,
             String filterProcessingUrl) {
         super(filterProcessingUrl);
         this.failureHandler = failureHandler;
         this.tokenExtractor = tokenExtractor;
-        this.tokenFactory = tokenFactory;
     }
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException, IOException, ServletException {
         String tokenPayload = request.getHeader(WebSecurityConfig.JWT_TOKEN_HEADER_PARAM);
-        UnsafeJwtToken token = tokenFactory.createUnsafeToken(tokenExtractor.extract(tokenPayload));
+        RawAccessJwtToken token = new RawAccessJwtToken(tokenExtractor.extract(tokenPayload));
         return getAuthenticationManager().authenticate(new JwtAuthenticationToken(token));
     }
 

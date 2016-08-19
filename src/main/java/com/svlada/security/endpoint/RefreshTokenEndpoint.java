@@ -21,18 +21,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.svlada.entity.User;
 import com.svlada.security.UserService;
-import com.svlada.security.auth.jwt.TokenVerifier;
+import com.svlada.security.auth.jwt.verifier.TokenVerifier;
 import com.svlada.security.config.JwtSettings;
 import com.svlada.security.config.WebSecurityConfig;
 import com.svlada.security.exceptions.InvalidJwtToken;
-import com.svlada.security.model.JwtToken;
-import com.svlada.security.model.JwtTokenFactory;
-import com.svlada.security.model.Scopes;
-import com.svlada.security.model.UnsafeJwtToken;
 import com.svlada.security.model.UserContext;
-
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
+import com.svlada.security.model.token.JwtToken;
+import com.svlada.security.model.token.JwtTokenFactory;
+import com.svlada.security.model.token.RawAccessJwtToken;
+import com.svlada.security.model.token.RefreshToken;
 
 /**
  * RefreshTokenEndpoint
@@ -41,7 +38,6 @@ import io.jsonwebtoken.Jws;
  *
  * Aug 17, 2016
  */
-@SuppressWarnings("unchecked")
 @RestController
 public class RefreshTokenEndpoint {
     @Autowired private JwtTokenFactory tokenFactory;
@@ -51,31 +47,24 @@ public class RefreshTokenEndpoint {
     
     @RequestMapping(value="/api/auth/token", method=RequestMethod.GET, produces={ MediaType.APPLICATION_JSON_VALUE })
     public @ResponseBody JwtToken refreshToken(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        UnsafeJwtToken unsafeToken = this.tokenFactory.createUnsafeToken(request.getHeader(WebSecurityConfig.JWT_TOKEN_HEADER_PARAM));
-        Jws<Claims> jwsClaims = unsafeToken.parseClaims(jwtSettings.getTokenSigningKey());
-
-        List<String> scopes = jwsClaims.getBody().get("scopes", List.class);
-        if (scopes == null || scopes.isEmpty() 
-                || !scopes.stream().filter(scope -> Scopes.REFRESH_TOKEN.authority().equals(scope)).findFirst().isPresent()) {
-            throw new InvalidJwtToken();
-        }
+        RawAccessJwtToken rawToken = new RawAccessJwtToken(request.getHeader(WebSecurityConfig.JWT_TOKEN_HEADER_PARAM));
+        RefreshToken refreshToken = RefreshToken.create(rawToken, jwtSettings.getTokenSigningKey()).orElseThrow(() -> new InvalidJwtToken());
         
-        String jti = jwsClaims.getBody().getId();
+        String jti = refreshToken.getJti();
         if (!tokenVerifier.verify(jti)) {
             throw new InvalidJwtToken();
         }
 
-        String subject = jwsClaims.getBody().getSubject();
-        
+        String subject = refreshToken.getSubject();
         User user = userService.getByUsername(subject).orElseThrow(() -> new UsernameNotFoundException("User not found: " + subject));
-        
+
         if (user.getRoles() == null) throw new InsufficientAuthenticationException("User has no roles assigned");
         List<GrantedAuthority> authorities = user.getRoles().stream()
                 .map(authority -> new SimpleGrantedAuthority(authority.getRole().authority()))
                 .collect(Collectors.toList());
-        
+
         UserContext userContext = UserContext.create(user.getUsername(), authorities);
-        
-        return tokenFactory.createSafeToken(userContext);
+
+        return tokenFactory.createAccessJwtToken(userContext);
     }
 }

@@ -1,4 +1,4 @@
-package com.svlada.security.model;
+package com.svlada.security.model.token;
 
 import java.util.Arrays;
 import java.util.UUID;
@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.svlada.security.config.JwtSettings;
+import com.svlada.security.model.Scopes;
+import com.svlada.security.model.UserContext;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -38,14 +40,12 @@ public class JwtTokenFactory {
      * @param roles
      * @return
      */
-    public SafeJwtToken createSafeToken(UserContext userContext) {
-        if (StringUtils.isBlank(userContext.getUsername())) {
+    public AccessJwtToken createAccessJwtToken(UserContext userContext) {
+        if (StringUtils.isBlank(userContext.getUsername())) 
             throw new IllegalArgumentException("Cannot create JWT Token without username");
-        }
         
-        if (userContext.getAuthorities() == null || userContext.getAuthorities().isEmpty()) {
+        if (userContext.getAuthorities() == null || userContext.getAuthorities().isEmpty()) 
             throw new IllegalArgumentException("User doesn't have any privileges");
-        }
 
         Claims claims = Jwts.claims().setSubject(userContext.getUsername());
         claims.put("scopes", userContext.getAuthorities().stream().map(s -> s.toString()).collect(Collectors.toList()));
@@ -60,7 +60,7 @@ public class JwtTokenFactory {
           .signWith(SignatureAlgorithm.HS512, settings.getTokenSigningKey())
         .compact();
 
-        return new SafeJwtToken(token, claims);
+        return new AccessJwtToken(token, claims);
     }
 
     public JwtToken createRefreshToken(UserContext userContext) {
@@ -82,18 +82,6 @@ public class JwtTokenFactory {
           .signWith(SignatureAlgorithm.HS512, settings.getTokenSigningKey())
         .compact();
 
-        return new SafeJwtToken(token, claims);
-    }
-
-    /**
-     * Unsafe version of JWT token is created.
-     * 
-     * <strong>WARNING:</strong> Token signature validation is not performed.
-     * 
-     * @param tokenPayload
-     * @return unsafe version of JWT token.
-     */
-    public UnsafeJwtToken createUnsafeToken(String tokenPayload) {
-        return new UnsafeJwtToken(tokenPayload);
+        return new AccessJwtToken(token, claims);
     }
 }

@@ -13,9 +13,9 @@ import org.springframework.stereotype.Component;
 
 import com.svlada.security.auth.JwtAuthenticationToken;
 import com.svlada.security.config.JwtSettings;
-import com.svlada.security.model.JwtToken;
-import com.svlada.security.model.UnsafeJwtToken;
 import com.svlada.security.model.UserContext;
+import com.svlada.security.model.token.JwtToken;
+import com.svlada.security.model.token.RawAccessJwtToken;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
@@ -40,13 +40,11 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        UnsafeJwtToken unsafeToken = (UnsafeJwtToken) authentication.getCredentials();
+        RawAccessJwtToken rawAccessToken = (RawAccessJwtToken) authentication.getCredentials();
 
-        Jws<Claims> jwsClaims = unsafeToken.parseClaims(jwtSettings.getTokenSigningKey());
+        Jws<Claims> jwsClaims = rawAccessToken.parseClaims(jwtSettings.getTokenSigningKey());
         String subject = jwsClaims.getBody().getSubject();
-        
         List<String> scopes = jwsClaims.getBody().get("scopes", List.class);
-
         List<GrantedAuthority> authorities = scopes.stream()
                 .map(authority -> new SimpleGrantedAuthority(authority))
                 .collect(Collectors.toList());

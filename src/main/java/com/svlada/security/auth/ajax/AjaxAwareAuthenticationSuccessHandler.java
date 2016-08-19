@@ -16,9 +16,9 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.svlada.security.model.JwtToken;
-import com.svlada.security.model.JwtTokenFactory;
 import com.svlada.security.model.UserContext;
+import com.svlada.security.model.token.JwtToken;
+import com.svlada.security.model.token.JwtTokenFactory;
 
 /**
  * AjaxAwareAuthenticationSuccessHandler
@@ -43,7 +43,7 @@ public class AjaxAwareAuthenticationSuccessHandler implements AuthenticationSucc
             Authentication authentication) throws IOException, ServletException {
         UserContext userContext = (UserContext) authentication.getPrincipal();
         
-        JwtToken token = tokenFactory.createSafeToken(userContext);
+        JwtToken token = tokenFactory.createAccessJwtToken(userContext);
         JwtToken refreshToken = tokenFactory.createRefreshToken(userContext);
 
         response.setStatus(HttpStatus.OK.value());
