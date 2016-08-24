@@ -5,6 +5,7 @@
 ### <a name="introduction" id="introduction">Introduction</a>
 
 Following are three scenarios that will be implemented in this tutorial:
+
 1. Ajax Authentication
 2. JWT Token Authentication
 
@@ -44,9 +45,11 @@ Directory tree below represents overall project structure:
 
 ### <a name="ajax-authentication" id="ajax-authentication">Ajax authentication</a>
 
-Default behavior of Spring Security is to allow user to submit credentials through form submission. We need to override this behavior and user to authenticate to our API by sending XMLHttpRequest with JSON Payload included.
+By default Spring Security has number of authentication filters implemented and configured in Spring Security filter chain. However, support for Ajax authentication is not added by default. In the first part of this tutorial we will implement support for Ajax authentication by following standard patterns found in Spring Security framework. 
 
-Following components are required in order to implement Ajax login in Spring Boot:
+When we think about Ajax authentication we usually mean about process where user is supplying credentials through JSON payload and sending it as a part of XMLHttpRequest.
+
+Following is the list of components required to implement Ajax authentication in Spring boot:
 
 1. ```AjaxLoginProcessingFilter extends AbstractAuthenticationProcessingFilter```
 2. ```AjaxAuthenticationProvider implements AuthenticationProvider```
@@ -55,7 +58,7 @@ Following components are required in order to implement Ajax login in Spring Boo
 5. ```RestAuthenticationEntryPoint implements AuthenticationEntryPoint```
 6. ```WebSecurityConfig extends WebSecurityConfigurerAdapter```
 
-Before we dive into the implementation details let's see how authentication flow looks like.
+Before we dive into the implementation details let's see high level picture of what we want to achieve.
 
 **Ajax authentication request example**
 
