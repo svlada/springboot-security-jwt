@@ -10,44 +10,58 @@ Following are three scenarios that will be implemented in this tutorial:
 
 ### Prerequisites
 
-First step is to create empty Spring Boot project. Visit spring initializr website(https://start.spring.io/) to generate boilerplate.
+Please checkout sample code/project from the following GitHub repository: https://github.com/svlada/springboot-security-jwt.
 
-Lets start by creating base package structure for our sample code. 
+Directory tree below represents overall project structure:
 
 ```
 +---main
 |   +---java
-|   |   +---com
-|   |   |   \---svlada
-|   |   |       +---common
-|   |   |       \---security
-|   |   |           +---auth
-|   |   |           |   +---ajax
-|   |   |           |   \---jwt
-|   |   |           +---config
-|   |   |           +---exceptions
-|   |   |           \---model
+|   |   \---com
+|   |       \---svlada
+|   |           +---common
+|   |           +---entity
+|   |           +---profile
+|   |           |   \---endpoint
+|   |           +---security
+|   |           |   +---auth
+|   |           |   |   +---ajax
+|   |           |   |   \---jwt
+|   |           |   |       +---extractor
+|   |           |   |       \---verifier
+|   |           |   +---config
+|   |           |   +---endpoint
+|   |           |   +---exceptions
+|   |           |   \---model
+|   |           |       \---token
+|   |           \---user
+|   |               +---repository
+|   |               \---service
 |   \---resources
 |       +---static
 |       \---templates
-\---test
-    \---java
-        \---com
-            \---svlada
 ```
 
 ### <a name="ajax-authentication" id="ajax-authentication">Ajax authentication</a>
 
-In order to implement Ajax Login in Spring Boot we'll need to implement a couple of components:
+Default behavior of Spring Security is to allow user to submit credentials through form submission. We need to override this behavior and user to authenticate to our API by sending XMLHttpRequest with JSON Payload included.
 
-1. AjaxLoginProcessingFilter
-2. AjaxAuthenticationProvider
-3. AjaxAwareAuthenticationSuccessHandler
-4. AjaxAwareAuthenticationFailureHandler
-5. RestAuthenticationEntryPoint
-6. WebSecurityConfig
+Following components are required in order to implement Ajax login in Spring Boot:
 
-Authentication flow starts with AJAX authentication request as shown below:
+1. ```AjaxLoginProcessingFilter extends AbstractAuthenticationProcessingFilter```
+2. ```AjaxAuthenticationProvider implements AuthenticationProvider```
+3. ```AjaxAwareAuthenticationSuccessHandler implements AuthenticationSuccessHandler```
+4. ```AjaxAwareAuthenticationFailureHandler implements AuthenticationFailureHandler```
+5. ```RestAuthenticationEntryPoint implements AuthenticationEntryPoint```
+6. ```WebSecurityConfig extends WebSecurityConfigurerAdapter```
+
+Before we dive into the implementation details let's see how authentication flow looks like.
+
+**Ajax authentication request example**
+
+User initiates authentication process by invoking authentication endpoint. Credentials are included in request body as an JSON payload.
+
+Raw HTTP request:
 
 ```
 POST /api/auth/login HTTP/1.1
@@ -62,16 +76,43 @@ Cache-Control: no-cache
 }
 ```
 
-User credentials are sent in JSON Payload of authentication request. If credentials are valid, authentication API will respond with HTTP status "200 OK". Additionaly JWT token is included in the HTTP response body. JWT token is then used to make authenticated API requests.
+CURL command:
 
-Sample HTTP Authentication reponse with JWT Token included:
+```
+curl -X POST -H "X-Requested-With: XMLHttpRequest" -H "Content-Type: application/json" -H "Cache-Control: no-cache" -d '{
+    "username": "svlada@gmail.com",
+    "password": "test1234"
+}' "http://localhost:9966/api/auth/login"
+```
+
+**Ajax authentication response example**
+
+If credentials provided by user are valid, authentication API will HTTP response with following details:
+
+1. HTTP status "200 OK"
+2. HTTP response body - JWT Access token and JWT Refresh token will be included in JSON Payload.
+
+**JWT Access token** - must be set in "X-Authorization" request header when accessing protected API resources.
+**JWT Refresh token** - used to acquire new Access Token.
+
+Raw HTTP Response:
 ```
 {
-    "token": "eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIl0sImlhdCI6MTQ3MDM4NDg4NSwiZXhwIjoxNDcwMzg1MDA1fQ.pvAyzZDd8F8snjH1a-geHGXFAnN-vnMJ5uW9TmF7nFvIGaYYUh-B5kyAr4nYioB07fwXFw6s22zPc3Ge1bekfQ"
+  "token": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzdmxhZGFAZ21haWwuY29tIiwic2NvcGVzIjpbIlJPTEVfQURNSU4iLCJST0xFX1BSRU1JVU1fTUVNQkVSIl0sImlzcyI6Imh0dHA6Ly9zdmxhZGEuY29tIiwiaWF0IjoxNDcyMDMzMzA4LCJleHAiOjE0NzIwMzQyMDh9.41rxtplFRw55ffqcw1Fhy2pnxggssdWUU8CDOherC0Kw4sgt3-rw_mPSWSgQgsR0NLndFcMPh7LSQt5mkYqROQ",
+  
+  "refreshToken": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzdmxhZGFAZ21haWwuY29tIiwic2NvcGVzIjpbIlJPTEVfUkVGUkVTSF9UT0tFTiJdLCJpc3MiOiJodHRwOi8vc3ZsYWRhLmNvbSIsImp0aSI6IjkwYWZlNzhjLTFkMmUtNDg2OS1hNzdlLTFkNzU0YjYwZTBjZSIsImlhdCI6MTQ3MjAzMzMwOCwiZXhwIjoxNDcyMDM2OTA4fQ.SEEG60YRznBB2O7Gn_5X6YbRmyB3ml4hnpSOxqkwQUFtqA6MZo7_n2Am2QhTJBJA1Ygv74F2IxiLv0urxGLQjg"
 }
 ```
 
-JWT Token consists of three parts: Header, Claims and Signature. Decoded values are presented below:
+**JWT Access Token**
+
+JWT Access Token is used for for authentication and authorization of API request.
+
+The API Request authentication is performed by validating JWT Access Token signature. If signature proves to be valid, access to requested resource is granted.
+
+The API Request will be authorized and appropriate privileges will be granted based on privileges found in **scope** attribute of JWT Access Token.
+
+Decoded JWT Access Token has three parts: Header, Claims and Signature as shown below:
 
 Header
 ```
@@ -80,25 +121,53 @@ Header
     "alg": "HS512"
 }
 ```
+
 Claims
 ```
-
 {
-	iss: "http://svlada.com",
-	sub: "svlada@gmail.com",
-	"roles": [
-        "ROLE_ADMIN"
-    ],
-  	"iat": 1470384885, 
-    "exp": 1470385005
+  "sub": "svlada@gmail.com",
+  "scopes": [
+    "ROLE_ADMIN",
+    "ROLE_PREMIUM_MEMBER"
+  ],
+  "iss": "http://svlada.com",
+  "iat": 1472033308,
+  "exp": 1472034208
 }
 ```
-Signature (encoded)
+
+Signature (base64 encoded)
 ```
-pvAyzZDd8F8snjH1a-geHGXFAnN-vnMJ5uW9TmF7nFvIGaYYUh-B5kyAr4nYioB07fwXFw6s22zPc3Ge1bekfQ
+41rxtplFRw55ffqcw1Fhy2pnxggssdWUU8CDOherC0Kw4sgt3-rw_mPSWSgQgsR0NLndFcMPh7LSQt5mkYqROQ
 ```
 
-Let's dive in the implementation details.
+**JWT Refresh Token**
+
+JWT Refresh Token is used for requesting new Access Tokens.
+
+{
+  "alg": "HS512"
+}
+
+{
+  "sub": "svlada@gmail.com",
+  "scopes": [
+    "ROLE_REFRESH_TOKEN"
+  ],
+  "iss": "http://svlada.com",
+  "jti": "90afe78c-1d2e-4869-a77e-1d754b60e0ce",
+  "iat": 1472033308,
+  "exp": 1472036908
+}
+
+Signature (base64 encoded)
+```
+SEEG60YRznBB2O7Gn_5X6YbRmyB3ml4hnpSOxqkwQUFtqA6MZo7_n2Am2QhTJBJA1Ygv74F2IxiLv0urxGLQjg
+```
+
+
+
+Let's dive into implementation details.
 
 #### AjaxLoginProcessingFilter
 
@@ -481,6 +550,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 ### [](http://stackoverflow.com/questions/21978658/invalidating-json-web-tokens/36884683#36884683)
 
 ### [](http://stackoverflow.com/questions/38557379/secure-and-stateless-jwt-implementation)
+https://github.com/dwyl/learn-json-web-tokens
+
+
+https://www.cloudfoundry.org/opaque-access-tokens-cloud-foundry/
 
 http://by.jtl.xyz/2016/06/the-unspoken-vulnerability-of-jwts.html
 
@@ -506,3 +579,5 @@ https://www.sslvpn.online/are-breaches-of-jwt-based-servers-more-damaging/
 http://nordicapis.com/how-to-control-user-identity-within-microservices/
 
 https://tools.ietf.org/html/rfc6749
+
+http://tutorials.pluralsight.com/java-and-j2ee/scalable-analytics-in-plain-java-with-keen-io-and-spring-boot
