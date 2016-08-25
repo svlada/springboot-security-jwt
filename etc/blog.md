@@ -11,9 +11,9 @@ Following are two scenarios that we'll implement in this tutorial:
 
 ### Prerequisites
 
-Please checkout the sample code/project from the following GitHub repository: https://github.com/svlada/springboot-security-jwt before you start.
+Please check out the sample code/project from the following GitHub repository: https://github.com/svlada/springboot-security-jwt before you start.
 
-Directory tree below represents overall project structure:
+Overall project structure is shown below:
 
 ```
 +---main
@@ -45,7 +45,7 @@ Directory tree below represents overall project structure:
 
 ### <a name="ajax-authentication" id="ajax-authentication">Ajax authentication</a>
 
-By default Spring Security has a number of authentication filters implemented and configured in Spring Security filter chain. However support for Ajax authentication is not available out of box. In the first part of this tutorial we will implement Ajax authentication by following standard patterns found in Spring Security framework. 
+By default Spring Security has a number of authentication filter implementations. Some of these filters are enabled by default. However support for Ajax authentication is not available out of the box. In the first part of this tutorial we will implement Ajax authentication by following standard patterns found in Spring Security framework.
 
 When we think about Ajax authentication we usually mean about process where user is supplying credentials through JSON payload and sending it as a part of XMLHttpRequest.
 
