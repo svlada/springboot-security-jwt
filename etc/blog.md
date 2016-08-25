@@ -47,7 +47,7 @@ Overall project structure is shown below:
 
 By default Spring Security has a number of authentication filter implementations. Some of these filters are enabled by default. However support for Ajax authentication is not available out of the box. In the first part of this tutorial we will implement Ajax authentication by following standard patterns found in Spring Security framework.
 
-When we think about Ajax authentication we usually mean about process where user is supplying credentials through JSON payload and sending it as a part of XMLHttpRequest.
+When we talk about Ajax authentication we usually refer to process where user is supplying credentials through JSON payload and sending it as a part of XMLHttpRequest.
 
 Following is the list of components that we'll implement as part of this tutorial:
 
@@ -58,11 +58,11 @@ Following is the list of components that we'll implement as part of this tutoria
 5. ```RestAuthenticationEntryPoint implements```
 6. ```WebSecurityConfig```
 
-Before we dive into the implementation details let's look at the high level picture of what we want to achieve.
+Before we get to the details of implementation, let's look at the request/response authentication flows.
 
 **Ajax authentication request example**
 
-Client initiates authentication process by invoking Authentication API endpoint(```/api/auth/login```). Please note that credentials should be included as a part of request body in a form of JSON payload.
+Client initiates authentication process by invoking Authentication API endpoint(```/api/auth/login```). Credentials are included in the request payload.
 
 Raw HTTP request:
 
@@ -79,7 +79,7 @@ Cache-Control: no-cache
 }
 ```
 
-CURL command:
+CURL:
 
 ```
 curl -X POST -H "X-Requested-With: XMLHttpRequest" -H "Content-Type: application/json" -H "Cache-Control: no-cache" -d '{
@@ -90,10 +90,10 @@ curl -X POST -H "X-Requested-With: XMLHttpRequest" -H "Content-Type: application
 
 **Ajax authentication response example**
 
-Authentication API will validate client supplied credentials. If credentials are valid, Authentication API will send HTTP response with the following details:
+If client supplied credentials are valid, Authentication API will send HTTP response with the following details:
 
 1. HTTP status "200 OK"
-2. JWT Access token and Refresh token will be included in JSON Payload as a part of HTTP Response.
+2. JWT Access token and Refresh token are included in response body.
 
 **JWT Access token** - it will be used to authenticate against protected API resources. It must be set in "X-Authorization" header.
 **JWT Refresh token** - it will be used to acquire new Access Token. Following API endpoint ```/api/auth/token``` is handling refresh token.
