@@ -1,17 +1,17 @@
 ## Table of contents:
 1. <a title="Introduction: JWT Token" href="#introduction">Introduction</a>
-2. <a title="Ajax authentication" id="ajax-authentication">Ajax authentication</a>
+2. <a title="Ajax authentication" id="#ajax-authentication">Ajax authentication</a>
 
 ### <a name="introduction" id="introduction">Introduction</a>
 
-Following are three scenarios that will be implemented in this tutorial:
+Following are two scenarios that we'll implement in this tutorial:
 
 1. Ajax Authentication
 2. JWT Token Authentication
 
 ### Prerequisites
 
-Please checkout sample code/project from the following GitHub repository: https://github.com/svlada/springboot-security-jwt.
+Please checkout the sample code/project from the following GitHub repository: https://github.com/svlada/springboot-security-jwt before you start.
 
 Directory tree below represents overall project structure:
 
@@ -45,24 +45,24 @@ Directory tree below represents overall project structure:
 
 ### <a name="ajax-authentication" id="ajax-authentication">Ajax authentication</a>
 
-By default Spring Security has number of authentication filters implemented and configured in Spring Security filter chain. However, support for Ajax authentication is not added by default. In the first part of this tutorial we will implement support for Ajax authentication by following standard patterns found in Spring Security framework. 
+By default Spring Security has a number of authentication filters implemented and configured in Spring Security filter chain. However support for Ajax authentication is not available out of box. In the first part of this tutorial we will implement Ajax authentication by following standard patterns found in Spring Security framework. 
 
 When we think about Ajax authentication we usually mean about process where user is supplying credentials through JSON payload and sending it as a part of XMLHttpRequest.
 
-Following is the list of components required to implement Ajax authentication in Spring boot:
+Following is the list of components that we'll implement as part of this tutorial:
 
-1. ```AjaxLoginProcessingFilter extends AbstractAuthenticationProcessingFilter```
-2. ```AjaxAuthenticationProvider implements AuthenticationProvider```
-3. ```AjaxAwareAuthenticationSuccessHandler implements AuthenticationSuccessHandler```
-4. ```AjaxAwareAuthenticationFailureHandler implements AuthenticationFailureHandler```
-5. ```RestAuthenticationEntryPoint implements AuthenticationEntryPoint```
-6. ```WebSecurityConfig extends WebSecurityConfigurerAdapter```
+1. ```AjaxLoginProcessingFilter```
+2. ```AjaxAuthenticationProvider```
+3. ```AjaxAwareAuthenticationSuccessHandler```
+4. ```AjaxAwareAuthenticationFailureHandler```
+5. ```RestAuthenticationEntryPoint implements```
+6. ```WebSecurityConfig```
 
-Before we dive into the implementation details let's see high level picture of what we want to achieve.
+Before we dive into the implementation details let's look at the high level picture of what we want to achieve.
 
 **Ajax authentication request example**
 
-User initiates authentication process by invoking authentication endpoint. Credentials are included in request body as an JSON payload.
+Client initiates authentication process by invoking Authentication API endpoint(```/api/auth/login```). Please note that credentials should be included as a part of request body in a form of JSON payload.
 
 Raw HTTP request:
 
@@ -90,13 +90,13 @@ curl -X POST -H "X-Requested-With: XMLHttpRequest" -H "Content-Type: application
 
 **Ajax authentication response example**
 
-If credentials provided by user are valid, authentication API will HTTP response with following details:
+Authentication API will validate client supplied credentials. If credentials are valid, Authentication API will send HTTP response with the following details:
 
 1. HTTP status "200 OK"
-2. HTTP response body - JWT Access token and JWT Refresh token will be included in JSON Payload.
+2. JWT Access token and Refresh token will be included in JSON Payload as a part of HTTP Response.
 
-**JWT Access token** - must be set in "X-Authorization" request header when accessing protected API resources.
-**JWT Refresh token** - used to acquire new Access Token.
+**JWT Access token** - it will be used to authenticate against protected API resources. It must be set in "X-Authorization" header.
+**JWT Refresh token** - it will be used to acquire new Access Token. Following API endpoint ```/api/auth/token``` is handling refresh token.
 
 Raw HTTP Response:
 ```
