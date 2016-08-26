@@ -182,10 +182,10 @@ SEEG60YRznBB2O7Gn_5X6YbRmyB3ml4hnpSOxqkwQUFtqA6MZo7_n2Am2QhTJBJA1Ygv74F2IxiLv0ur
 
 First step is to extend AbstractAuthenticationProcessingFilter to provide custom processing of Ajax authentication requests.
 
-Parsing and basic validation of incoming JSON payload is done in the AjaxLoginProcessingFilter#attemptAuthentication method. If authentication JSON payload is valid, actual authentication logic is delegated to AjaxAuthenticationProvider class.
+De-serialization and basic validation of the incoming JSON payload is done in the AjaxLoginProcessingFilter#attemptAuthentication method. If JSON payload is valid, authentication logic is delegated to AjaxAuthenticationProvider class.
 
-In case of successuful authentication AjaxLoginProcessingFilter#successfulAuthentication is called.
-In case of application failure AjaxLoginProcessingFilter#unsuccessfulAuthentication is called.
+In case of successful authentication AjaxLoginProcessingFilter#successfulAuthentication is invoked.
+In case of application failure AjaxLoginProcessingFilter#unsuccessfulAuthentication is invoked.
 
 ```language-java
 public class AjaxLoginProcessingFilter extends AbstractAuthenticationProcessingFilter {
@@ -196,11 +196,9 @@ public class AjaxLoginProcessingFilter extends AbstractAuthenticationProcessingF
 
     private final ObjectMapper objectMapper;
     
-    public AjaxLoginProcessingFilter(String defaultFilterProcessesUrl, 
-            AuthenticationSuccessHandler successHandler, 
-            AuthenticationFailureHandler failureHandler, 
-            ObjectMapper mapper) {
-        super(defaultFilterProcessesUrl);
+    public AjaxLoginProcessingFilter(String defaultProcessUrl, AuthenticationSuccessHandler successHandler, 
+            AuthenticationFailureHandler failureHandler, ObjectMapper mapper) {
+        super(defaultProcessUrl);
         this.successHandler = successHandler;
         this.failureHandler = failureHandler;
         this.objectMapper = mapper;
@@ -210,6 +208,9 @@ public class AjaxLoginProcessingFilter extends AbstractAuthenticationProcessingF
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException, IOException, ServletException {
         if (!HttpMethod.POST.name().equals(request.getMethod()) || !WebUtil.isAjax(request)) {
+            if(logger.isDebugEnabled()) {
+                logger.debug("Authentication method not supported. Request method: " + request.getMethod());
+            }
             throw new AuthMethodNotSupportedException("Authentication method not supported");
         }
 
@@ -218,7 +219,7 @@ public class AjaxLoginProcessingFilter extends AbstractAuthenticationProcessingF
         if (StringUtils.isBlank(loginRequest.getUsername()) || StringUtils.isBlank(loginRequest.getPassword())) {
             throw new AuthenticationServiceException("Username or Password not provided");
         }
-        
+
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword());
 
         return this.getAuthenticationManager().authenticate(token);
@@ -241,37 +242,47 @@ public class AjaxLoginProcessingFilter extends AbstractAuthenticationProcessingF
 
 #### AjaxAuthenticationProvider
 
-AjaxAuthenticationProvider class responsiblity is to:
+Responsibility of the AjaxAuthenticationProvider class  is to:
 
-1. Verify user credentials against database, ldap or some other system which holds user data.
-2. Throw authentication exception in case of that username and password doesn't match record in the database, username doesnt exists, etc.
-3. Create UserContext and populate it with information you need.
-4. Create JWT Token and sign it with the private key (JwtTokenFactory).
+1. Verify user credentials against database, LDAP or some other system which holds the user data
+2. Throw authentication exception in case of that ```username``` and ```password``` don't match record in the database
+3. Create UserContext and populate it with user data you need (in our case just ```username``` and ```user privileges```)
+4. In case of successful authentication delegate creation of JWT Token to ```AjaxAwareAuthenticationSuccessHandler```
 
 ```language-java
 @Component
 public class AjaxAuthenticationProvider implements AuthenticationProvider {
-    private final JwtTokenFactory tokenFactory;
-    private final UserService userService;
-    
+    private final BCryptPasswordEncoder encoder;
+    private final DatabaseUserService userService;
+
     @Autowired
-    public AjaxAuthenticationProvider(final JwtTokenFactory tokenFactory, final UserService userService) {
-        this.tokenFactory = tokenFactory;
+    public AjaxAuthenticationProvider(final DatabaseUserService userService, final BCryptPasswordEncoder encoder) {
         this.userService = userService;
+        this.encoder = encoder;
     }
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        Assert.notNull(authentication, "No authentication data provided.");
+        Assert.notNull(authentication, "No authentication data provided");
 
         String username = (String) authentication.getPrincipal();
         String password = (String) authentication.getCredentials();
 
-        UserContext userContext = userService.loadUser(username, password);
+        User user = userService.getByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+        
+        if (!encoder.matches(password, user.getPassword())) {
+            throw new BadCredentialsException("Authentication Failed. Username or Password not valid.");
+        }
 
-        SafeJwtToken safeJwtToken = tokenFactory.createSafeToken(userContext, userContext.getAuthorities());
-
-        return new JwtAuthenticationToken(userContext, safeJwtToken, userContext.getAuthorities());
+        if (user.getRoles() == null) throw new InsufficientAuthenticationException("User has no roles assigned");
+        
+        List<GrantedAuthority> authorities = user.getRoles().stream()
+                .map(authority -> new SimpleGrantedAuthority(authority.getRole().authority()))
+                .collect(Collectors.toList());
+        
+        UserContext userContext = UserContext.create(user.getUsername(), authorities);
+        
+        return new UsernamePasswordAuthenticationToken(userContext, null, userContext.getAuthorities());
     }
 
     @Override
@@ -281,157 +292,106 @@ public class AjaxAuthenticationProvider implements AuthenticationProvider {
 }
 ```
 
-Let's focus for a moment on how JWT token is created. In this tutorial we are using [Java JWT](https://github.com/jwtk/jjwt) library created by [Stormpath](https://stormpath.com/).
-
-Make sure that this JJWT dependency is included in your pom.xml.
-
-```language-xml
-<dependency>
-	<groupId>io.jsonwebtoken</groupId>
-    <artifactId>jjwt</artifactId>
-    <version>${jjwt.version}</version>
-</dependency>
-```
-
-JwtTokenFactory#createSafeToken method will create signed Jwt Token.
-
-Please note that if you are instantiating Claims object outside of Jwts.builder() make sure to first invoke Jwts.builder()#setClaims(claims). Why? Well, if you don't do that, Jwts.builder will, by default, create empty Claims object. What that means? Well if you call Jwts.builder()#setClaims() after you have set subject with Jwts.builder()#setSubject() your subject will be lost. Simply new instance of Claims class will overwrite default one created by Jwts.builder().
-
-```
-@Component
-public class JwtTokenFactory {
-    @Autowired
-    private JwtSettings settings;
-
-    /**
-     * Factory method for issuing new JWT Tokens.
-     * 
-     * @param username
-     * @param roles
-     * @return
-     */
-    public SafeJwtToken createSafeToken(UserContext userContext, final Collection<GrantedAuthority> roles) {
-        if (StringUtils.isBlank(userContext.getUsername())) {
-            throw new IllegalArgumentException("Cannot create JWT Token without username");
-        }
-
-        if (Collections.isEmpty(roles)) {
-            throw new IllegalArgumentException("Cannot create JWT Token without roles");
-        }
-
-        DateTime currentTime = new DateTime();
-
-        Claims claims = Jwts.claims();
-        claims.put("roles", AuthorityUtils.authorityListToSet(roles));
-
-        String token = Jwts.builder()
-          .setClaims(claims)
-          .setIssuer(settings.getTokenIssuer())
-          .setSubject(userContext.getUsername())
-          .setIssuedAt(currentTime.toDate())
-          .setExpiration(currentTime.plusMinutes(settings.getTokenExpirationTime()).toDate())
-          .signWith(SignatureAlgorithm.HS512, settings.getTokenSigningKey())
-        .compact();
-
-        return new SafeJwtToken(token, claims);
-    }
-
-    /**
-     * Unsafe version of JWT token is created.
-     * 
-     * <strong>WARNING:</strong> Token signature validation is not performed.
-     * 
-     * @param tokenPayload
-     * @return unsafe version of JWT token.
-     */
-    public UnsafeJwtToken createUnsafeToken(String tokenPayload) {
-        return new UnsafeJwtToken(tokenPayload);
-    }
-}
-```
-
-We have extended AbstractAuthenticationToken and implemented JwtAuthenticationToken that will be passed through application as an authentication object.
-
-```
-public class JwtAuthenticationToken extends AbstractAuthenticationToken {
-    private static final long serialVersionUID = 2877954820905567501L;
-
-    private JwtToken safeToken;
-    private UnsafeJwtToken unsafeToken;
-
-    private UserContext userContext;
-
-    public JwtAuthenticationToken(UnsafeJwtToken unsafeToken) {
-        super(null);
-        this.unsafeToken = unsafeToken;
-        this.setAuthenticated(false);
-    }
-
-    public JwtAuthenticationToken(UserContext userContext, SafeJwtToken token,
-            Collection<? extends GrantedAuthority> authorities) {
-        super(authorities);
-        this.safeToken = token;
-        this.userContext = userContext;
-        super.setAuthenticated(true);
-    }
-
-    @Override
-    public void setAuthenticated(boolean authenticated) {
-        if (authenticated) {
-            throw new IllegalArgumentException(
-                    "Cannot set this token to trusted - use constructor which takes a GrantedAuthority list instead");
-        }
-        super.setAuthenticated(false);
-    }
-
-    @Override
-    public Object getCredentials() {
-        return null;
-    }
-
-    @Override
-    public Object getPrincipal() {
-        return this.userContext;
-    }
-
-    public JwtToken getSafeToken() {
-        return this.safeToken;
-    }
-
-    public UnsafeJwtToken getUnsafeToken() {
-        return unsafeToken;
-    }
-
-    @Override
-    public void eraseCredentials() {
-        super.eraseCredentials();
-    }
-}
-```
-
 #### AjaxAwareAuthenticationSuccessHandler
 
-AjaxAwareAuthenticationSuccessHandler is simple class and it's used by Spring to actually send HTTP response upon successuful authentication.
+AuthenticationSuccessHandler interface provides contract for handling successful user authentication.
 
+AjaxAwareAuthenticationSuccessHandler class is providing custom implementation of AuthenticationSuccessHandler interface by creating 
+JSON payload with JWT Access and Refresh tokens.
 
 ```
 @Component
 public class AjaxAwareAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
     private final ObjectMapper mapper;
+    private final JwtTokenFactory tokenFactory;
 
     @Autowired
-    public AjaxAwareAuthenticationSuccessHandler(ObjectMapper mapper) {
+    public AjaxAwareAuthenticationSuccessHandler(final ObjectMapper mapper, final JwtTokenFactory tokenFactory) {
         this.mapper = mapper;
+        this.tokenFactory = tokenFactory;
     }
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
             Authentication authentication) throws IOException, ServletException {
-        JwtToken token = ((JwtAuthenticationToken) authentication).getSafeToken();
+        UserContext userContext = (UserContext) authentication.getPrincipal();
+        
+        JwtToken accessToken = tokenFactory.createAccessJwtToken(userContext);
+        JwtToken refreshToken = tokenFactory.createRefreshToken(userContext);
+        
+        Map<String, String> tokenMap = new HashMap<String, String>();
+        tokenMap.put("token", accessToken.getToken());
+        tokenMap.put("refreshToken", refreshToken.getToken());
 
         response.setStatus(HttpStatus.OK.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        mapper.writeValue(response.getWriter(), token);
+        mapper.writeValue(response.getWriter(), tokenMap);
+
+        clearAuthenticationAttributes(request);
+    }
+
+    /**
+     * Removes temporary authentication-related data which may have been stored
+     * in the session during the authentication process..
+     * 
+     */
+    protected final void clearAuthenticationAttributes(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+
+        if (session == null) {
+            return;
+        }
+
+        session.removeAttribute(WebAttributes.AUTHENTICATION_EXCEPTION);
+    }
+}
+```
+
+Let's focus for a moment on how JWT Access token is created. In this tutorial we are using [Java JWT](https://github.com/jwtk/jjwt) library created by [Stormpath](https://stormpath.com/).
+
+Make sure that ```JJWT``` dependency is included in your ```pom.xml```.
+
+```language-xml
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt</artifactId>
+    <version>${jjwt.version}</version>
+</dependency>
+```
+
+JwtTokenFactory#createAccessJwtToken method creates signed JWT Access token.
+
+JwtTokenFactory#createRefreshToken method creates signed JWT Refresh token.
+
+Please note that if you are instantiating Claims object outside of Jwts.builder() make sure to first invoke Jwts.builder()#setClaims(claims). Why? Well, if you don't do that, Jwts.builder will, by default, create empty Claims object. What that means? Well if you call Jwts.builder()#setClaims() after you have set subject with Jwts.builder()#setSubject() your subject will be lost. Simply new instance of Claims class will overwrite default one created by Jwts.builder().
+
+```
+@Component
+public class AjaxAwareAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
+    private final ObjectMapper mapper;
+    private final JwtTokenFactory tokenFactory;
+
+    @Autowired
+    public AjaxAwareAuthenticationSuccessHandler(final ObjectMapper mapper, final JwtTokenFactory tokenFactory) {
+        this.mapper = mapper;
+        this.tokenFactory = tokenFactory;
+    }
+
+    @Override
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+            Authentication authentication) throws IOException, ServletException {
+        UserContext userContext = (UserContext) authentication.getPrincipal();
+        
+        JwtToken accessToken = tokenFactory.createAccessJwtToken(userContext);
+        JwtToken refreshToken = tokenFactory.createRefreshToken(userContext);
+        
+        Map<String, String> tokenMap = new HashMap<String, String>();
+        tokenMap.put("token", accessToken.getToken());
+        tokenMap.put("refreshToken", refreshToken.getToken());
+
+        response.setStatus(HttpStatus.OK.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        mapper.writeValue(response.getWriter(), tokenMap);
 
         clearAuthenticationAttributes(request);
     }
