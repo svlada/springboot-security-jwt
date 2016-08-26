@@ -1,6 +1,6 @@
 ## Table of contents:
 1. <a title="Introduction: JWT Token" href="#introduction">Introduction</a>
-2. <a title="Ajax authentication" id="#ajax-authentication">Ajax authentication</a>
+2. <a title="Spring Security: Ajax authentication" href="#ajax-authentication">Ajax authentication</a>
 
 ### <a name="introduction" id="introduction">Introduction</a>
 
@@ -9,7 +9,7 @@ Following are two scenarios that we'll implement in this tutorial:
 1. Ajax Authentication
 2. JWT Token Authentication
 
-### Prerequisites
+### PRE-requisites
 
 Please check out the sample code/project from the following GitHub repository: https://github.com/svlada/springboot-security-jwt before you proceed.
 
@@ -45,7 +45,7 @@ Overall project structure is shown below:
 
 ### <a name="ajax-authentication" id="ajax-authentication">Ajax authentication</a>
 
-By default Spring Security has a number of authentication filter implementations. Some of these filters are enabled by default. However support for Ajax authentication is not available out of the box. In the first part of this tutorial we will implement Ajax authentication by following standard patterns found in Spring Security framework.
+Spring Security has a number of authentication filter implementations. Some of these filters are enabled by default. However support for Ajax authentication is not available out of the box. In the first part of this tutorial we'll implement Ajax authentication by following standard patterns found in Spring Security framework.
 
 When we talk about Ajax authentication we usually refer to process where user is supplying credentials through JSON payload sent as a part of XMLHttpRequest.
 
@@ -115,7 +115,7 @@ JWT Access Token can be used for authentication and authorization:
 1. Authentication is performed by verifying JWT Access Token signature. If signature proves to be valid, access to requested API resource is granted.
 2. Authorization is done by looking up privileges found in **scope** attribute of JWT Access Token.
 
-Decoded JWT Access Token has three parts: Header, Claims and Signature as shown below:
+Decoded JWT Access token has three parts: Header, Claims and Signature as shown below:
 
 Header
 ```
@@ -146,12 +146,21 @@ Signature (base64 encoded)
 
 **JWT Refresh Token**
 
-JWT Refresh Token is used for requesting new Access Tokens.
+Refresh token is used for requesting new Access tokens. Refresh token is long lived token and it's expiration time is greater than expiration time of Access token.
 
+I have added ```jti``` claim to the Refresh token. JWT ID(```jti```) claim is defined by [RFC7519](https://tools.ietf.org/html/rfc7519#section-4.1.7) with purpose to uniquely identify individual Refresh tokens. In this tutorial we'll use ```jti``` claim to maintain list of blacklisted or revoked tokens.
+
+Decoded Refresh token has three parts: Header, Claims and Signature as shown below:
+
+Header
+```
 {
   "alg": "HS512"
 }
+```
 
+Claims
+```
 {
   "sub": "svlada@gmail.com",
   "scopes": [
@@ -162,15 +171,12 @@ JWT Refresh Token is used for requesting new Access Tokens.
   "iat": 1472033308,
   "exp": 1472036908
 }
+```
 
 Signature (base64 encoded)
 ```
 SEEG60YRznBB2O7Gn_5X6YbRmyB3ml4hnpSOxqkwQUFtqA6MZo7_n2Am2QhTJBJA1Ygv74F2IxiLv0urxGLQjg
 ```
-
-
-
-Let's dive into implementation details.
 
 #### AjaxLoginProcessingFilter
 
