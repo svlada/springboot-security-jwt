@@ -447,9 +447,31 @@ public class AjaxAwareAuthenticationFailureHandler implements AuthenticationFail
 }
 ```
 
+### <a name="jwt-authentication" id="jwt-authentication">JWT Authentication</a>
+
+Token based authentication schema's became immensely popular in recent times, as they provide important benefits when compared to sessions/cookies:
+
+1. CORS
+2. No need for CSRF protection
+3. Better integration with mobile
+4. Reduced load on authorization server
+5. No need for distributed session store
+
+In this article we'll explain approach where JWT's are used for token based authentication.
+
+Authentication flow is very simple: 
+
+1. User obtains Refresh and Access tokens by providing credentials to Authorization server
+2. User sends Access token with each request to access protected API resource
+3. Access token is signed and contains user identity(e.g. user id) and authorization claims. It's important to note that authorization claims will be included with Access token.
+
 #### WebSecurityConfig
 
-Extends WebSecurityConfigurerAdapter to configure our custom Security filters.
+WebSecurityConfig class is where all security related configuration reside. 
+
+
+1. AjaxLoginProcessingFilter
+2. JwtTokenAuthenticationProcessingFilter
 
 ```
 @Configuration
@@ -530,11 +552,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 }
 ```
-
-### <a name="jwt-authentication" id="jwt-authentication">JWT Authentication</a>
-
-
-
 
 
 ### Conclusion
