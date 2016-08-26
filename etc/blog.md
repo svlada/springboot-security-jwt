@@ -415,7 +415,7 @@ public class AjaxAwareAuthenticationSuccessHandler implements AuthenticationSucc
 
 #### AjaxAwareAuthenticationFailureHandler
 
-AjaxAwareAuthenticationFailureHandler is invoked by Spring in case of authentication failure. You can create specific error message based on exception type that have occured during the authentication process.
+AjaxAwareAuthenticationFailureHandler is invoked by Spring in case of authentication failure. You can create specific error message based on exception type that have occurred during the authentication process.
 
 ```
 @Component
@@ -425,51 +425,66 @@ public class AjaxAwareAuthenticationFailureHandler implements AuthenticationFail
     @Autowired
     public AjaxAwareAuthenticationFailureHandler(ObjectMapper mapper) {
         this.mapper = mapper;
-    }	
+    }   
     
-	@Override
-	public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
-			AuthenticationException e) throws IOException, ServletException {
-		
-		response.setStatus(HttpStatus.UNAUTHORIZED.value());
-		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-		
-		if (e instanceof BadCredentialsException) {
-			mapper.writeValue(response.getWriter(), ErrorResponse.of("Invalid username or password", ErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED));
-		} else if (e instanceof JwtExpiredTokenException) {
-			mapper.writeValue(response.getWriter(), ErrorResponse.of("Token has expired", ErrorCode.JWT_TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED));
-		} else if (e instanceof AuthMethodNotSupportedException) {
-		    mapper.writeValue(response.getWriter(), ErrorResponse.of(e.getMessage(), ErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED));
-		}
+    @Override
+    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
+            AuthenticationException e) throws IOException, ServletException {
+        
+        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        
+        if (e instanceof BadCredentialsException) {
+            mapper.writeValue(response.getWriter(), ErrorResponse.of("Invalid username or password", ErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED));
+        } else if (e instanceof JwtExpiredTokenException) {
+            mapper.writeValue(response.getWriter(), ErrorResponse.of("Token has expired", ErrorCode.JWT_TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED));
+        } else if (e instanceof AuthMethodNotSupportedException) {
+            mapper.writeValue(response.getWriter(), ErrorResponse.of(e.getMessage(), ErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED));
+        }
 
-		mapper.writeValue(response.getWriter(), ErrorResponse.of("Authentication failed", ErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED));
-	}
+        mapper.writeValue(response.getWriter(), ErrorResponse.of("Authentication failed", ErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED));
+    }
 }
 ```
 
-#### WebSecurityConfig - Initial version to support AJAX based login
+#### WebSecurityConfig
 
-This is first version of WebSecurityConfig. We will add more configuration to it once we start with showcase of JWT Authentication flow.
+Extends WebSecurityConfigurerAdapter to configure our custom Security filters.
 
 ```
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+    public static final String JWT_TOKEN_HEADER_PARAM = "X-Authorization";
     public static final String FORM_BASED_LOGIN_ENTRY_POINT = "/api/auth/login";
     public static final String TOKEN_BASED_AUTH_ENTRY_POINT = "/api/**";
-
+    public static final String TOKEN_REFRESH_ENTRY_POINT = "/api/auth/token";
+    
     @Autowired private RestAuthenticationEntryPoint authenticationEntryPoint;
     @Autowired private AuthenticationSuccessHandler successHandler;
     @Autowired private AuthenticationFailureHandler failureHandler;
     @Autowired private AjaxAuthenticationProvider ajaxAuthenticationProvider;
-
+    @Autowired private JwtAuthenticationProvider jwtAuthenticationProvider;
+    
+    @Autowired private TokenExtractor tokenExtractor;
+    
     @Autowired private AuthenticationManager authenticationManager;
     
     @Autowired private ObjectMapper objectMapper;
-    
+        
     @Bean
     protected AjaxLoginProcessingFilter buildAjaxLoginProcessingFilter() throws Exception {
         AjaxLoginProcessingFilter filter = new AjaxLoginProcessingFilter(FORM_BASED_LOGIN_ENTRY_POINT, successHandler, failureHandler, objectMapper);
+        filter.setAuthenticationManager(this.authenticationManager);
+        return filter;
+    }
+    
+    @Bean
+    protected JwtTokenAuthenticationProcessingFilter buildJwtTokenAuthenticationProcessingFilter() throws Exception {
+        List<String> pathsToSkip = Arrays.asList(TOKEN_REFRESH_ENTRY_POINT, FORM_BASED_LOGIN_ENTRY_POINT);
+        SkipPathRequestMatcher matcher = new SkipPathRequestMatcher(pathsToSkip, TOKEN_BASED_AUTH_ENTRY_POINT);
+        JwtTokenAuthenticationProcessingFilter filter 
+            = new JwtTokenAuthenticationProcessingFilter(failureHandler, tokenExtractor, matcher);
         filter.setAuthenticationManager(this.authenticationManager);
         return filter;
     }
@@ -482,6 +497,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     
     protected void configure(AuthenticationManagerBuilder auth) {
         auth.authenticationProvider(ajaxAuthenticationProvider);
+        auth.authenticationProvider(jwtAuthenticationProvider);
+    }
+    
+    @Bean
+    protected BCryptPasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     @Override
@@ -497,9 +518,15 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
         .and()
             .authorizeRequests()
-            .antMatchers(FORM_BASED_LOGIN_ENTRY_POINT).permitAll() // Login end-point
+                .antMatchers(FORM_BASED_LOGIN_ENTRY_POINT).permitAll() // Login end-point
+                .antMatchers(TOKEN_REFRESH_ENTRY_POINT).permitAll() // Token refresh end-point
+                .antMatchers("/console").permitAll() // H2 Console Dash-board - only for testing
         .and()
-            .addFilterBefore(buildAjaxLoginProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
+            .authorizeRequests()
+                .antMatchers(TOKEN_BASED_AUTH_ENTRY_POINT).authenticated() // Protected API End-points
+        .and()
+            .addFilterBefore(buildAjaxLoginProcessingFilter(), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(buildJwtTokenAuthenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
     }
 }
 ```
