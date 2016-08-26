@@ -457,13 +457,21 @@ Token based authentication schema's became immensely popular in recent times, as
 4. Reduced load on authorization server
 5. No need for distributed session store
 
+Some trade-offs have to be made with this approach:
+
+1. More vulnerable to XSS attacks
+2. Access token can contain outdated authorization claims (e.g when some of the user privileges is revoked)
+3. Access tokens can grow in size in case of increased number of claims
+4. File download API can be tricky to implement
+
+
 In this article we'll explain approach where JWT's are used for token based authentication.
 
 Authentication flow is very simple: 
 
 1. User obtains Refresh and Access tokens by providing credentials to Authorization server
 2. User sends Access token with each request to access protected API resource
-3. Access token is signed and contains user identity(e.g. user id) and authorization claims. It's important to note that authorization claims will be included with Access token.
+3. Access token is signed and contains user identity(e.g. user id) and authorization claims. It's important to note that authorization claims will be included with Access token. 
 
 #### WebSecurityConfig
 
