@@ -543,33 +543,27 @@ Remember that loosing a JWT token is like loosing your house keys. So be careful
 
 ## References
 
-### [](https://www.dinochiesa.net/?p=1388)
+### [I don’t see the point in Revoking or Blacklisting JWT](https://www.dinochiesa.net/?p=1388)
 
 ### [Spring Security Architecture - Dave Syer](https://github.com/dsyer/spring-security-architecture)
 
-### [](http://stackoverflow.com/questions/21978658/invalidating-json-web-tokens/36884683#36884683)
+### [Invalidating JWT](http://stackoverflow.com/questions/21978658/invalidating-json-web-tokens/36884683#36884683)
 
-### [](http://stackoverflow.com/questions/38557379/secure-and-stateless-jwt-implementation)
+### [Secure and stateless JWT implementation](http://stackoverflow.com/questions/38557379/secure-and-stateless-jwt-implementation)
 
-### [](https://github.com/dwyl/learn-json-web-tokens)
+### [Learn JWT](https://github.com/dwyl/learn-json-web-tokens)
 
-### [](https://www.cloudfoundry.org/opaque-access-tokens-cloud-foundry/)
+### [Opaque access tokens and cloud foundry](https://www.cloudfoundry.org/opaque-access-tokens-cloud-foundry/)
 
-### [](http://by.jtl.xyz/2016/06/the-unspoken-vulnerability-of-jwts.html)
+### [The unspoken vulnerability of JWTS](http://by.jtl.xyz/2016/06/the-unspoken-vulnerability-of-jwts.html)
 
-### [](http://nordicapis.com/how-to-control-user-identity-within-microservices/)
+### [How To Control User Identity Within Micro-services](http://nordicapis.com/how-to-control-user-identity-within-microservices/)
 
-### [](http://stackoverflow.com/questions/3487991/why-does-oauth-v2-have-both-access-and-refresh-tokens/12885823)
+### [Why Does OAuth v2 Have Both Access and Refresh Tokens?](http://stackoverflow.com/questions/3487991/why-does-oauth-v2-have-both-access-and-refresh-tokens/12885823)
 
-### [](https://tools.ietf.org/html/rfc6749#section-1.4)
+### [RFC-6749](https://tools.ietf.org/html/rfc6749)
 
-### [](http://by.jtl.xyz/2016/06/the-unspoken-vulnerability-of-jwts.html)
-
-### [](https://www.sslvpn.online/are-breaches-of-jwt-based-servers-more-damaging/)
-
-### [](http://nordicapis.com/how-to-control-user-identity-within-microservices/)
-
-### [](http://tutorials.pluralsight.com/java-and-j2ee/scalable-analytics-in-plain-java-with-keen-io-and-spring-boot)
+### [Are breaches of JWT-based servers more damaging?](https://www.sslvpn.online/are-breaches-of-jwt-based-servers-more-damaging/)
 
 true statelessness and revocation are mutually exclusive
 
