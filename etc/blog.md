@@ -180,9 +180,7 @@ SEEG60YRznBB2O7Gn_5X6YbRmyB3ml4hnpSOxqkwQUFtqA6MZo7_n2Am2QhTJBJA1Ygv74F2IxiLv0ur
 
 #### AjaxLoginProcessingFilter
 
-AbstractAuthenticationProcessingFilter class is responsible for processing of HTTP-based authentication requests. Please note that AuthenticationManager must be set for this class.
-
-AjaxLoginProcessingFilter is overriding AbstractAuthenticationProcessingFilter to provide implementation for AJAX based authentication. 
+First step is to extend AbstractAuthenticationProcessingFilter to provide custom processing of Ajax authentication requests.
 
 Parsing and basic validation of incoming JSON payload is done in the AjaxLoginProcessingFilter#attemptAuthentication method. If authentication JSON payload is valid, actual authentication logic is delegated to AjaxAuthenticationProvider class.
 
