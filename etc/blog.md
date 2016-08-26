@@ -531,47 +531,46 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 }
 ```
 
-
-### <a name="jwt-token-authentication" id="jwt-token-authentication">Jwt token authentication</a>
-
+### <a name="jwt-authentication" id="jwt-authentication">JWT Authentication</a>
 
 
+
+
+
+### Conclusion
+
+Remember that loosing a JWT token is like loosing your house keys. So be careful.
 
 ## References
+
+### [](https://www.dinochiesa.net/?p=1388)
 
 ### [Spring Security Architecture - Dave Syer](https://github.com/dsyer/spring-security-architecture)
 
 ### [](http://stackoverflow.com/questions/21978658/invalidating-json-web-tokens/36884683#36884683)
 
 ### [](http://stackoverflow.com/questions/38557379/secure-and-stateless-jwt-implementation)
-https://github.com/dwyl/learn-json-web-tokens
 
+### [](https://github.com/dwyl/learn-json-web-tokens)
 
-https://www.cloudfoundry.org/opaque-access-tokens-cloud-foundry/
+### [](https://www.cloudfoundry.org/opaque-access-tokens-cloud-foundry/)
 
-http://by.jtl.xyz/2016/06/the-unspoken-vulnerability-of-jwts.html
+### [](http://by.jtl.xyz/2016/06/the-unspoken-vulnerability-of-jwts.html)
 
-http://nordicapis.com/how-to-control-user-identity-within-microservices/
+### [](http://nordicapis.com/how-to-control-user-identity-within-microservices/)
 
-http://stackoverflow.com/questions/3487991/why-does-oauth-v2-have-both-access-and-refresh-tokens/12885823
+### [](http://stackoverflow.com/questions/3487991/why-does-oauth-v2-have-both-access-and-refresh-tokens/12885823)
 
-https://tools.ietf.org/html/rfc6749#section-1.4
+### [](https://tools.ietf.org/html/rfc6749#section-1.4)
 
-Keep user identity in the JWT but not user roles.
+### [](http://by.jtl.xyz/2016/06/the-unspoken-vulnerability-of-jwts.html)
 
-Loosing a JWT token is like loosing your house keys. 
+### [](https://www.sslvpn.online/are-breaches-of-jwt-based-servers-more-damaging/)
 
-https://www.dinochiesa.net/?p=1388
+### [](http://nordicapis.com/how-to-control-user-identity-within-microservices/)
 
-http://by.jtl.xyz/2016/06/the-unspoken-vulnerability-of-jwts.html
+### [](http://tutorials.pluralsight.com/java-and-j2ee/scalable-analytics-in-plain-java-with-keen-io-and-spring-boot)
 
 true statelessness and revocation are mutually exclusive
 
 
-https://www.sslvpn.online/are-breaches-of-jwt-based-servers-more-damaging/
-
-http://nordicapis.com/how-to-control-user-identity-within-microservices/
-
-https://tools.ietf.org/html/rfc6749
-
-http://tutorials.pluralsight.com/java-and-j2ee/scalable-analytics-in-plain-java-with-keen-io-and-spring-boot
