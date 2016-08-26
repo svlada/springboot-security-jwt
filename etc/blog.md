@@ -55,10 +55,10 @@ Following is the list of components that we'll implement:
 2. ```AjaxAuthenticationProvider```
 3. ```AjaxAwareAuthenticationSuccessHandler```
 4. ```AjaxAwareAuthenticationFailureHandler```
-5. ```RestAuthenticationEntryPoint implements```
+5. ```RestAuthenticationEntryPoint```
 6. ```WebSecurityConfig```
 
-Before we get to the details of implementation, let's look at the request/response authentication flows.
+Before we get to the details of the implementation, let's look at the request/response authentication flow.
 
 **Ajax authentication request example**
 
@@ -93,10 +93,10 @@ curl -X POST -H "X-Requested-With: XMLHttpRequest" -H "Content-Type: application
 If client supplied credentials are valid, Authentication API will reply with HTTP response including the following details:
 
 1. HTTP status "200 OK"
-2. Signed JWT Access and Refresh tokens are included in the response body.
+2. Signed JWT Access and Refresh tokens are included in the response body
 
-**JWT Access token** - it will be used to authenticate against protected API resources. It must be set in "X-Authorization" header.
-**JWT Refresh token** - it will be used to acquire new Access Token. Following API endpoint ```/api/auth/token``` is handling refresh token.
+**JWT Access token** - used to authenticate against protected API resources. It must be set in "X-Authorization" header.
+**JWT Refresh token** - used to acquire new Access Token. Following API endpoint ```/api/auth/token``` is handling refresh token.
 
 Raw HTTP Response:
 
@@ -148,7 +148,7 @@ Signature (base64 encoded)
 
 Refresh token is used for requesting new Access tokens. Refresh token is long lived token and it's expiration time is greater than expiration time of Access token.
 
-I have added ```jti``` claim to the Refresh token. JWT ID(```jti```) claim is defined by [RFC7519](https://tools.ietf.org/html/rfc7519#section-4.1.7) with purpose to uniquely identify individual Refresh tokens. In this tutorial we'll use ```jti``` claim to maintain list of blacklisted or revoked tokens.
+In this tutorial we'll use ```jti``` claim to maintain list of blacklisted or revoked tokens. JWT ID(```jti```) claim is defined by [RFC7519](https://tools.ietf.org/html/rfc7519#section-4.1.7) with purpose to uniquely identify individual Refresh tokens. 
 
 Decoded Refresh token has three parts: Header, Claims and Signature as shown below:
 
