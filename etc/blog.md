@@ -4,6 +4,8 @@
 
 ### <a name="introduction" id="introduction">Introduction</a>
 
+In this article we will implement JWT authentication with Spring Boot.
+
 Following are two scenarios that we'll implement in this tutorial:
 
 1. Ajax Authentication
@@ -516,10 +518,26 @@ CURL:
 curl -X GET -H "X-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzdmxhZGFAZ21haWwuY29tIiwic2NvcGVzIjpbIlJPTEVfQURNSU4iLCJST0xFX1BSRU1JVU1fTUVNQkVSIl0sImlzcyI6Imh0dHA6Ly9zdmxhZGEuY29tIiwiaWF0IjoxNDcyMzkwMDY1LCJleHAiOjE0NzIzOTA5NjV9.Y9BR7q3f1npsSEYubz-u8tQ8dDOdBcVPFN7AIfWwO37KyhRugVzEbWVPO1obQlHNJWA0Nx1KrEqHqMEjuNWo5w" -H "Cache-Control: no-cache" "http://localhost:9966/api/me"
 ```
 
+Let's see the implementation details. Following are components we need to implement JWT Authentication:
+
+1. JwtTokenAuthenticationProcessingFilter
+2. JwtAuthenticationProvider
+3. SkipPathRequestMatcher
+4. JwtHeaderTokenExtractor
+5. BloomFilterTokenVerifier
+6. WebSecurityConfig
+
+#### JwtTokenAuthenticationProcessingFilter
+
+#### JwtAuthenticationProvider
+
+#### SkipPathRequestMatcher
+
+#### JwtHeaderTokenExtractor
+
+#### BloomFilterTokenVerifier
 
 #### WebSecurityConfig
-
-
 
 WebSecurityConfig class is where all security related configuration reside. 
 
