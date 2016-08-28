@@ -435,7 +435,7 @@ Please note that if you are instantiating Claims object outside of ```Jwts.build
 
 #### AjaxAwareAuthenticationFailureHandler
 
-AjaxAwareAuthenticationFailureHandler is invoked by Spring when authentication failure occurs. You can design specific error messages based on exception type that have occurred during the authentication process.
+AjaxAwareAuthenticationFailureHandler is invoked by ```AjaxLoginProcessingFilter``` in case of authentication failures. You can design specific error messages based on exception type that have occurred during the authentication process.
 
 ```
 @Component
@@ -481,7 +481,7 @@ Token based authentication schema's became immensely popular in recent times, as
 Some trade-offs have to be made with this approach:
 
 1. More vulnerable to XSS attacks
-2. Access token can contain outdated authorization claims (e.g when some of the user privileges is revoked)
+2. Access token can contain outdated authorization claims (e.g when some of the user privileges are revoked)
 3. Access tokens can grow in size in case of increased number of claims
 4. File download API can be tricky to implement
 
@@ -495,18 +495,26 @@ JWT Authentication flow is very simple:
 
 It's important to note that authorization claims will be included with the Access token. Why is this important? Well, let's say that authorization claims(e.g user privileges in the database) are changed during the life time of Access token. Those changes will not become effective until new Access token is issued. In most cases this is not big issue, because Access tokens are short-lived. Otherwise go with the opaque token pattern.
 
-Before we get to the details of the implementation, let's look at the request/response authentication flow.
+Before we get to the details of the implementation, let's look the sample request to protected API resource.
 
 **Signed request to protected API resource**
 
+Following pattern should be used when sending access tokens: ```<header-name> Bearer <access_token>```.
 
+In our example for header name(```<header-name>```) we are using ```X-Authorization```.
 
+Raw HTTP request:
+```
+GET /api/me HTTP/1.1
+Host: localhost:9966
+X-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzdmxhZGFAZ21haWwuY29tIiwic2NvcGVzIjpbIlJPTEVfQURNSU4iLCJST0xFX1BSRU1JVU1fTUVNQkVSIl0sImlzcyI6Imh0dHA6Ly9zdmxhZGEuY29tIiwiaWF0IjoxNDcyMzkwMDY1LCJleHAiOjE0NzIzOTA5NjV9.Y9BR7q3f1npsSEYubz-u8tQ8dDOdBcVPFN7AIfWwO37KyhRugVzEbWVPO1obQlHNJWA0Nx1KrEqHqMEjuNWo5w
+Cache-Control: no-cache
+```
 
-
-
-
-
-
+CURL:
+```
+curl -X GET -H "X-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzdmxhZGFAZ21haWwuY29tIiwic2NvcGVzIjpbIlJPTEVfQURNSU4iLCJST0xFX1BSRU1JVU1fTUVNQkVSIl0sImlzcyI6Imh0dHA6Ly9zdmxhZGEuY29tIiwiaWF0IjoxNDcyMzkwMDY1LCJleHAiOjE0NzIzOTA5NjV9.Y9BR7q3f1npsSEYubz-u8tQ8dDOdBcVPFN7AIfWwO37KyhRugVzEbWVPO1obQlHNJWA0Nx1KrEqHqMEjuNWo5w" -H "Cache-Control: no-cache" "http://localhost:9966/api/me"
+```
 
 
 #### WebSecurityConfig
