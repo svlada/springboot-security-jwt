@@ -529,7 +529,7 @@ Let's see the implementation details. Following are components we need to implem
 
 #### JwtTokenAuthenticationProcessingFilter
 
-JwtTokenAuthenticationProcessingFilter is invoked for each API request ```/api/**``` except for the endpoint that is handling strategy for token refresh(```/api/auth/token```)s.
+JwtTokenAuthenticationProcessingFilter is processing all API requests(```/api/**```) except for the refresh token endpoint(```/api/auth/token```).
 
 This filter has the following responsibilities:
 
