@@ -45,7 +45,7 @@ Overall project structure is shown below:
 
 ### <a name="ajax-authentication" id="ajax-authentication">Ajax authentication</a>
 
-Spring Security has a number of authentication filter implementations. Some of these filters are enabled by default. However support for Ajax authentication is not available out of the box. In the first part of this tutorial we'll implement Ajax authentication by following standard patterns found in Spring Security framework.
+Spring Security framework provides support for various authentication strategies. Ajax authentication is not available out of the box. In the first part of this tutorial we'll implement Ajax authentication by following standard patterns found in Spring Security framework.
 
 When we talk about Ajax authentication we usually refer to process where user is supplying credentials through JSON payload sent as a part of XMLHttpRequest.
 
@@ -110,10 +110,10 @@ Raw HTTP Response:
 
 **JWT Access Token**
 
-JWT Access Token can be used for authentication and authorization:
+JWT Access token can be used for authentication and authorization:
 
 1. Authentication is performed by verifying JWT Access Token signature. If signature proves to be valid, access to requested API resource is granted.
-2. Authorization is done by looking up privileges found in **scope** attribute of JWT Access Token.
+2. Authorization is done by looking up privileges found in **scope** attribute of JWT Access token.
 
 Decoded JWT Access token has three parts: Header, Claims and Signature as shown below:
 
@@ -146,9 +146,9 @@ Signature (base64 encoded)
 
 **JWT Refresh Token**
 
-Refresh token is used for requesting new Access tokens. Refresh token is long lived token and it's expiration time is greater than expiration time of Access token.
+Refresh token is long-lived token used to request new Access tokens. It's expiration time is greater than expiration time of Access token.
 
-In this tutorial we'll use ```jti``` claim to maintain list of blacklisted or revoked tokens. JWT ID(```jti```) claim is defined by [RFC7519](https://tools.ietf.org/html/rfc7519#section-4.1.7) with purpose to uniquely identify individual Refresh tokens. 
+In this tutorial we'll use ```jti``` claim to maintain list of blacklisted or revoked tokens. JWT ID(```jti```) claim is defined by [RFC7519](https://tools.ietf.org/html/rfc7519#section-4.1.7) with purpose to uniquely identify individual Refresh token. 
 
 Decoded Refresh token has three parts: Header, Claims and Signature as shown below:
 
@@ -180,9 +180,9 @@ SEEG60YRznBB2O7Gn_5X6YbRmyB3ml4hnpSOxqkwQUFtqA6MZo7_n2Am2QhTJBJA1Ygv74F2IxiLv0ur
 
 #### AjaxLoginProcessingFilter
 
-First step is to extend AbstractAuthenticationProcessingFilter to provide custom processing of Ajax authentication requests.
+First step is to extend AbstractAuthenticationProcessingFilter in order to provide custom processing of Ajax authentication requests.
 
-De-serialization and basic validation of the incoming JSON payload is done in the AjaxLoginProcessingFilter#attemptAuthentication method. If JSON payload is valid, authentication logic is delegated to AjaxAuthenticationProvider class.
+De-serialization and basic validation of the incoming JSON payload is done in the AjaxLoginProcessingFilter#attemptAuthentication method. Upon successful validation of the JSON payload authentication logic is delegated to AjaxAuthenticationProvider class.
 
 In case of successful authentication AjaxLoginProcessingFilter#successfulAuthentication is invoked.
 In case of application failure AjaxLoginProcessingFilter#unsuccessfulAuthentication is invoked.
@@ -247,7 +247,7 @@ Responsibility of the AjaxAuthenticationProvider class  is to:
 1. Verify user credentials against database, LDAP or some other system which holds the user data
 2. Throw authentication exception in case of that ```username``` and ```password``` don't match record in the database
 3. Create UserContext and populate it with user data you need (in our case just ```username``` and ```user privileges```)
-4. In case of successful authentication delegate creation of JWT Token to ```AjaxAwareAuthenticationSuccessHandler```
+4. Upon successful authentication delegate creation of JWT Token to ```AjaxAwareAuthenticationSuccessHandler```
 
 ```language-java
 @Component
@@ -359,63 +359,82 @@ Make sure that ```JJWT``` dependency is included in your ```pom.xml```.
 </dependency>
 ```
 
-JwtTokenFactory#createAccessJwtToken method creates signed JWT Access token.
+We have created JwtTokenFactory is factory class to decouple token creation logic.
 
-JwtTokenFactory#createRefreshToken method creates signed JWT Refresh token.
+```JwtTokenFactory#createAccessJwtToken``` method creates signed JWT Access token.
 
-Please note that if you are instantiating Claims object outside of Jwts.builder() make sure to first invoke Jwts.builder()#setClaims(claims). Why? Well, if you don't do that, Jwts.builder will, by default, create empty Claims object. What that means? Well if you call Jwts.builder()#setClaims() after you have set subject with Jwts.builder()#setSubject() your subject will be lost. Simply new instance of Claims class will overwrite default one created by Jwts.builder().
+```JwtTokenFactory#createRefreshToken``` method creates signed JWT Refresh token.
+
 
 ```
 @Component
-public class AjaxAwareAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
-    private final ObjectMapper mapper;
-    private final JwtTokenFactory tokenFactory;
+public class JwtTokenFactory {
+    private final JwtSettings settings;
 
     @Autowired
-    public AjaxAwareAuthenticationSuccessHandler(final ObjectMapper mapper, final JwtTokenFactory tokenFactory) {
-        this.mapper = mapper;
-        this.tokenFactory = tokenFactory;
-    }
-
-    @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
-            Authentication authentication) throws IOException, ServletException {
-        UserContext userContext = (UserContext) authentication.getPrincipal();
-        
-        JwtToken accessToken = tokenFactory.createAccessJwtToken(userContext);
-        JwtToken refreshToken = tokenFactory.createRefreshToken(userContext);
-        
-        Map<String, String> tokenMap = new HashMap<String, String>();
-        tokenMap.put("token", accessToken.getToken());
-        tokenMap.put("refreshToken", refreshToken.getToken());
-
-        response.setStatus(HttpStatus.OK.value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        mapper.writeValue(response.getWriter(), tokenMap);
-
-        clearAuthenticationAttributes(request);
+    public JwtTokenFactory(JwtSettings settings) {
+        this.settings = settings;
     }
 
     /**
-     * Removes temporary authentication-related data which may have been stored
-     * in the session during the authentication process..
+     * Factory method for issuing new JWT Tokens.
      * 
+     * @param username
+     * @param roles
+     * @return
      */
-    protected final void clearAuthenticationAttributes(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
+    public AccessJwtToken createAccessJwtToken(UserContext userContext) {
+        if (StringUtils.isBlank(userContext.getUsername())) 
+            throw new IllegalArgumentException("Cannot create JWT Token without username");
 
-        if (session == null) {
-            return;
+        if (userContext.getAuthorities() == null || userContext.getAuthorities().isEmpty()) 
+            throw new IllegalArgumentException("User doesn't have any privileges");
+
+        Claims claims = Jwts.claims().setSubject(userContext.getUsername());
+        claims.put("scopes", userContext.getAuthorities().stream().map(s -> s.toString()).collect(Collectors.toList()));
+
+        DateTime currentTime = new DateTime();
+
+        String token = Jwts.builder()
+          .setClaims(claims)
+          .setIssuer(settings.getTokenIssuer())
+          .setIssuedAt(currentTime.toDate())
+          .setExpiration(currentTime.plusMinutes(settings.getTokenExpirationTime()).toDate())
+          .signWith(SignatureAlgorithm.HS512, settings.getTokenSigningKey())
+        .compact();
+
+        return new AccessJwtToken(token, claims);
+    }
+
+    public JwtToken createRefreshToken(UserContext userContext) {
+        if (StringUtils.isBlank(userContext.getUsername())) {
+            throw new IllegalArgumentException("Cannot create JWT Token without username");
         }
 
-        session.removeAttribute(WebAttributes.AUTHENTICATION_EXCEPTION);
+        DateTime currentTime = new DateTime();
+
+        Claims claims = Jwts.claims().setSubject(userContext.getUsername());
+        claims.put("scopes", Arrays.asList(Scopes.REFRESH_TOKEN.authority()));
+        
+        String token = Jwts.builder()
+          .setClaims(claims)
+          .setIssuer(settings.getTokenIssuer())
+          .setId(UUID.randomUUID().toString())
+          .setIssuedAt(currentTime.toDate())
+          .setExpiration(currentTime.plusMinutes(settings.getRefreshTokenExpTime()).toDate())
+          .signWith(SignatureAlgorithm.HS512, settings.getTokenSigningKey())
+        .compact();
+
+        return new AccessJwtToken(token, claims);
     }
 }
 ```
 
+Please note that if you are instantiating Claims object outside of Jwts.builder() make sure to first invoke Jwts.builder()#setClaims(claims). Why? Well, if you don't do that, Jwts.builder will, by default, create empty Claims object. What that means? Well if you call Jwts.builder()#setClaims() after you have set subject with Jwts.builder()#setSubject() your subject will be lost. Simply new instance of Claims class will overwrite default one created by Jwts.builder().
+
 #### AjaxAwareAuthenticationFailureHandler
 
-AjaxAwareAuthenticationFailureHandler is invoked by Spring in case of authentication failure. You can create specific error message based on exception type that have occurred during the authentication process.
+AjaxAwareAuthenticationFailureHandler is invoked by Spring when authentication failure occurs. You can design specific error messages based on exception type that have occurred during the authentication process.
 
 ```
 @Component
@@ -445,6 +464,7 @@ public class AjaxAwareAuthenticationFailureHandler implements AuthenticationFail
         mapper.writeValue(response.getWriter(), ErrorResponse.of("Authentication failed", ErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED));
     }
 }
+
 ```
 
 ### <a name="jwt-authentication" id="jwt-authentication">JWT Authentication</a>
@@ -464,14 +484,13 @@ Some trade-offs have to be made with this approach:
 3. Access tokens can grow in size in case of increased number of claims
 4. File download API can be tricky to implement
 
+In this article we'll investigate how JWT's can used for token based authentication.
 
-In this article we'll explain approach where JWT's are used for token based authentication.
-
-Authentication flow is very simple: 
+JWT Authentication flow is very simple: 
 
 1. User obtains Refresh and Access tokens by providing credentials to Authorization server
 2. User sends Access token with each request to access protected API resource
-3. Access token is signed and contains user identity(e.g. user id) and authorization claims. It's important to note that authorization claims will be included with Access token. 
+3. Access token is signed and contains user identity(e.g. user id) and authorization claims. It's important to note that authorization claims will be included with the Access token. Why is this important? Well, let's say that authorization claims(e.g user privileges in the database) are changed during the life time of Access token. Those changes will not become effective until new Access token is issued. In most cases this is not big issue, because Access tokens are short-lived. Otherwise go with the opaque token pattern.
 
 #### WebSecurityConfig
 
