@@ -529,12 +529,12 @@ Let's see the implementation details. Following are components we need to implem
 
 #### JwtTokenAuthenticationProcessingFilter
 
-JwtTokenAuthenticationProcessingFilter is filter that is invoked for each API request ```/api/**``` except the refresh token endpoint ```/api/auth/token```.
+JwtTokenAuthenticationProcessingFilter is invoked for each API request ```/api/**``` except for the endpoint that is handling strategy for token refresh(```/api/auth/token```)s.
 
-This filter has following responsibilities:
+This filter has the following responsibilities:
 
-1. Check for access token in ```X-Authorization``` header. If Access token is found in header, delegate authentication to ```JwtAuthenticationProvider``` otherwise authentication exception is thrown.
-2. Invokes success or failure strategies based on the outcome of authentication process performed by ```JwtAuthenticationProvider```.
+1. Check for access token in ```X-Authorization``` header. If Access token is found in header, delegate authentication to ```JwtAuthenticationProvider``` otherwise throw authentication exception
+2. Invokes success or failure strategies based on the outcome of authentication process performed by ```JwtAuthenticationProvider```
 
 Please ensure that ```chain.doFilter(request, response)``` is invoked upon successful authentication. You want processing of the request to advance to the next filter, because very last one filter ```FilterSecurityInterceptor#doFilter``` is responsible to actually invoke method in your controller that is handling requested API resource.
 
