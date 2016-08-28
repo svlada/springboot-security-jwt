@@ -360,7 +360,7 @@ Make sure that ```JJWT``` dependency is included in your ```pom.xml```.
 </dependency>
 ```
 
-We have created JwtTokenFactory is factory class to decouple token creation logic.
+We have created factory class(```JwtTokenFactory```) to decouple token creation logic.
 
 ```JwtTokenFactory#createAccessJwtToken``` method creates signed JWT Access token.
 
@@ -431,7 +431,7 @@ public class JwtTokenFactory {
 }
 ```
 
-Please note that if you are instantiating Claims object outside of Jwts.builder() make sure to first invoke Jwts.builder()#setClaims(claims). Why? Well, if you don't do that, Jwts.builder will, by default, create empty Claims object. What that means? Well if you call Jwts.builder()#setClaims() after you have set subject with Jwts.builder()#setSubject() your subject will be lost. Simply new instance of Claims class will overwrite default one created by Jwts.builder().
+Please note that if you are instantiating Claims object outside of ```Jwts.builder()``` make sure to first invoke ```Jwts.builder()#setClaims(claims)```. Why? Well, if you don't do that, Jwts.builder will, by default, create empty Claims object. What that means? Well if you call ```Jwts.builder()#setClaims()``` after you have set subject with ```Jwts.builder()#setSubject()``` your subject will be lost. Simply new instance of Claims class will overwrite default one created by Jwts.builder().
 
 #### AjaxAwareAuthenticationFailureHandler
 
