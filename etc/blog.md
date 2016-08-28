@@ -45,7 +45,7 @@ Overall project structure is shown below:
 
 ### <a name="ajax-authentication" id="ajax-authentication">Ajax authentication</a>
 
-Spring Security framework provides support for various authentication strategies. Ajax authentication is not available out of the box. In the first part of this tutorial we'll implement Ajax authentication by following standard patterns found in Spring Security framework.
+In the first part of this tutorial we'll implement Ajax authentication by following standard patterns found in Spring Security framework.
 
 When we talk about Ajax authentication we usually refer to process where user is supplying credentials through JSON payload sent as a part of XMLHttpRequest.
 
@@ -96,6 +96,7 @@ If client supplied credentials are valid, Authentication API will reply with HTT
 2. Signed JWT Access and Refresh tokens are included in the response body
 
 **JWT Access token** - used to authenticate against protected API resources. It must be set in "X-Authorization" header.
+
 **JWT Refresh token** - used to acquire new Access Token. Following API endpoint ```/api/auth/token``` is handling refresh token.
 
 Raw HTTP Response:
@@ -182,10 +183,10 @@ SEEG60YRznBB2O7Gn_5X6YbRmyB3ml4hnpSOxqkwQUFtqA6MZo7_n2Am2QhTJBJA1Ygv74F2IxiLv0ur
 
 First step is to extend AbstractAuthenticationProcessingFilter in order to provide custom processing of Ajax authentication requests.
 
-De-serialization and basic validation of the incoming JSON payload is done in the AjaxLoginProcessingFilter#attemptAuthentication method. Upon successful validation of the JSON payload authentication logic is delegated to AjaxAuthenticationProvider class.
+De-serialization and basic validation of the incoming JSON payload is done in the ```AjaxLoginProcessingFilter#attemptAuthentication``` method. Upon successful validation of the JSON payload authentication logic is delegated to AjaxAuthenticationProvider class.
 
-In case of successful authentication AjaxLoginProcessingFilter#successfulAuthentication is invoked.
-In case of application failure AjaxLoginProcessingFilter#unsuccessfulAuthentication is invoked.
+In case of successful authentication ```AjaxLoginProcessingFilter#successfulAuthentication``` is invoked.
+In case of application failure ```AjaxLoginProcessingFilter#unsuccessfulAuthentication``` is invoked.
 
 ```language-java
 public class AjaxLoginProcessingFilter extends AbstractAuthenticationProcessingFilter {
