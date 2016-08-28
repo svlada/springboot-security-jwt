@@ -529,7 +529,95 @@ Let's see the implementation details. Following are components we need to implem
 
 #### JwtTokenAuthenticationProcessingFilter
 
+JwtTokenAuthenticationProcessingFilter is filter that is invoked for each API request ```/api/**``` except the refresh token endpoint ```/api/auth/token```.
+
+This filter has following responsibilities:
+
+1. Check for access token in ```X-Authorization``` header. If Access token is found in header, delegate authentication to ```JwtAuthenticationProvider``` otherwise authentication exception is thrown.
+2. Invokes success or failure strategies based on the outcome of authentication process performed by ```JwtAuthenticationProvider```.
+
+Please ensure that ```chain.doFilter(request, response)``` is invoked upon successful authentication. You want processing of the request to advance to the next filter, because very last one filter ```FilterSecurityInterceptor#doFilter``` is responsible to actually invoke method in your controller that is handling requested API resource.
+
+```
+public class JwtTokenAuthenticationProcessingFilter extends AbstractAuthenticationProcessingFilter {
+    private final AuthenticationFailureHandler failureHandler;
+    private final TokenExtractor tokenExtractor;
+    
+    @Autowired
+    public JwtTokenAuthenticationProcessingFilter(AuthenticationFailureHandler failureHandler, 
+            TokenExtractor tokenExtractor, RequestMatcher matcher) {
+        super(matcher);
+        this.failureHandler = failureHandler;
+        this.tokenExtractor = tokenExtractor;
+    }
+
+    @Override
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
+            throws AuthenticationException, IOException, ServletException {
+        String tokenPayload = request.getHeader(WebSecurityConfig.JWT_TOKEN_HEADER_PARAM);
+        RawAccessJwtToken token = new RawAccessJwtToken(tokenExtractor.extract(tokenPayload));
+        return getAuthenticationManager().authenticate(new JwtAuthenticationToken(token));
+    }
+
+    @Override
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
+            Authentication authResult) throws IOException, ServletException {
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authResult);
+        SecurityContextHolder.setContext(context);
+        chain.doFilter(request, response);
+    }
+
+    @Override
+    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
+            AuthenticationException failed) throws IOException, ServletException {
+        SecurityContextHolder.clearContext();
+        failureHandler.onAuthenticationFailure(request, response, failed);
+    }
+}
+```
+
 #### JwtAuthenticationProvider
+
+JwtAuthenticationProvider has following responsibilities:
+
+1. Perform signature validation of incoming Access token.
+2. Extract authorization claims from Access token and instantiate User Context to be used by application
+3. Authentication exception is thrown if Access token is malformed, expired or simply if token is not signed with appropriate signing key
+
+```
+@Component
+public class JwtAuthenticationProvider implements AuthenticationProvider {
+    private final JwtSettings jwtSettings;
+    
+    @Autowired
+    public JwtAuthenticationProvider(JwtSettings jwtSettings) {
+        this.jwtSettings = jwtSettings;
+    }
+
+    @Override
+    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+        RawAccessJwtToken rawAccessToken = (RawAccessJwtToken) authentication.getCredentials();
+
+        Jws<Claims> jwsClaims = rawAccessToken.parseClaims(jwtSettings.getTokenSigningKey());
+        String subject = jwsClaims.getBody().getSubject();
+        List<String> scopes = jwsClaims.getBody().get("scopes", List.class);
+        List<GrantedAuthority> authorities = scopes.stream()
+                .map(authority -> new SimpleGrantedAuthority(authority))
+                .collect(Collectors.toList());
+        
+        UserContext context = UserContext.create(subject, authorities);
+        
+        return new JwtAuthenticationToken(context, context.getAuthorities());
+    }
+
+    @Override
+    public boolean supports(Class<?> authentication) {
+        return (JwtAuthenticationToken.class.isAssignableFrom(authentication));
+    }
+}
+
+```
 
 #### SkipPathRequestMatcher
 
