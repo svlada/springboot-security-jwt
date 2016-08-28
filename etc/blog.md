@@ -490,9 +490,27 @@ JWT Authentication flow is very simple:
 
 1. User obtains Refresh and Access tokens by providing credentials to Authorization server
 2. User sends Access token with each request to access protected API resource
-3. Access token is signed and contains user identity(e.g. user id) and authorization claims. It's important to note that authorization claims will be included with the Access token. Why is this important? Well, let's say that authorization claims(e.g user privileges in the database) are changed during the life time of Access token. Those changes will not become effective until new Access token is issued. In most cases this is not big issue, because Access tokens are short-lived. Otherwise go with the opaque token pattern.
+3. Access token is signed and contains user identity(e.g. user id) and authorization claims. 
+
+It's important to note that authorization claims will be included with the Access token. Why is this important? Well, let's say that authorization claims(e.g user privileges in the database) are changed during the life time of Access token. Those changes will not become effective until new Access token is issued. In most cases this is not big issue, because Access tokens are short-lived. Otherwise go with the opaque token pattern.
+
+Before we get to the details of the implementation, let's look at the request/response authentication flow.
+
+**Signed request to protected API resource**
+
+
+
+
+
+
+
+
+
+
 
 #### WebSecurityConfig
+
+
 
 WebSecurityConfig class is where all security related configuration reside. 
 
