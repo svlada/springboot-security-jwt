@@ -15,6 +15,8 @@ Following are two scenarios that we'll implement in this tutorial:
 
 Please check out the sample code/project from the following GitHub repository: https://github.com/svlada/springboot-security-jwt before you proceed.
 
+Project is configured with H2 in-memory database. Data fixtures are included so that you can test authentication process with ease.
+
 Overall project structure is shown below:
 
 ```
@@ -47,7 +49,7 @@ Overall project structure is shown below:
 
 ### <a name="ajax-authentication" id="ajax-authentication">Ajax authentication</a>
 
-In the first part of this tutorial we'll implement Ajax authentication by following standard patterns found in Spring Security framework.
+In the first part of this tutorial Ajax authentication is implemented by following standard patterns found in Spring Security framework.
 
 When we talk about Ajax authentication we usually refer to process where user is supplying credentials through JSON payload that is sent as a part of XMLHttpRequest.
 
@@ -97,7 +99,7 @@ If client supplied credentials are valid, Authentication API will reply with HTT
 1. HTTP status "200 OK"
 2. Signed JWT Access and Refresh tokens are included in the response body
 
-**JWT Access token** - used to authenticate against protected API resources. It must be set in "X-Authorization" header.
+**JWT Access token** - used to authenticate against protected API resources. It must be set in ```X-Authorization``` header.
 
 **JWT Refresh token** - used to acquire new Access Token. Following API endpoint ```/api/auth/token``` is handling refresh token.
 
@@ -116,7 +118,7 @@ Raw HTTP Response:
 JWT Access token can be used for authentication and authorization:
 
 1. Authentication is performed by verifying JWT Access Token signature. If signature proves to be valid, access to requested API resource is granted.
-2. Authorization is done by looking up privileges found in **scope** attribute of JWT Access token.
+2. Authorization is done by looking up privileges in **scope** attribute of JWT Access token.
 
 Decoded JWT Access token has three parts: Header, Claims and Signature as shown below:
 
@@ -183,12 +185,12 @@ SEEG60YRznBB2O7Gn_5X6YbRmyB3ml4hnpSOxqkwQUFtqA6MZo7_n2Am2QhTJBJA1Ygv74F2IxiLv0ur
 
 #### AjaxLoginProcessingFilter
 
-First step is to extend AbstractAuthenticationProcessingFilter in order to provide custom processing of Ajax authentication requests.
+First step is to extend ```AbstractAuthenticationProcessingFilter``` in order to provide custom processing of Ajax authentication requests.
 
 De-serialization and basic validation of the incoming JSON payload is done in the ```AjaxLoginProcessingFilter#attemptAuthentication``` method. Upon successful validation of the JSON payload authentication logic is delegated to AjaxAuthenticationProvider class.
 
-In case of successful authentication ```AjaxLoginProcessingFilter#successfulAuthentication``` is invoked.
-In case of application failure ```AjaxLoginProcessingFilter#unsuccessfulAuthentication``` is invoked.
+In case of successful authentication ```AjaxLoginProcessingFilter#successfulAuthentication``` method is invoked.
+In case of application failure ```AjaxLoginProcessingFilter#unsuccessfulAuthentication``` method is invoked.
 
 ```language-java
 public class AjaxLoginProcessingFilter extends AbstractAuthenticationProcessingFilter {
@@ -248,7 +250,7 @@ public class AjaxLoginProcessingFilter extends AbstractAuthenticationProcessingF
 Responsibility of the AjaxAuthenticationProvider class  is to:
 
 1. Verify user credentials against database, LDAP or some other system which holds the user data
-2. Throw authentication exception in case of that ```username``` and ```password``` don't match record in the database
+2. If ```username``` and ```password``` do not match the record in the database authentication exception is thrown
 3. Create UserContext and populate it with user data you need (in our case just ```username``` and ```user privileges```)
 4. Upon successful authentication delegate creation of JWT Token to ```AjaxAwareAuthenticationSuccessHandler```
 
@@ -529,7 +531,7 @@ Let's see the implementation details. Following are components we need to implem
 
 #### JwtTokenAuthenticationProcessingFilter
 
-JwtTokenAuthenticationProcessingFilter is processing all API requests(```/api/**```) except for the refresh token endpoint(```/api/auth/token```).
+```JwtTokenAuthenticationProcessingFilter``` filter is applied to each API endpoint(```/api/**```) except the refresh token endpoint(```/api/auth/token```).
 
 This filter has the following responsibilities:
 
@@ -579,7 +581,7 @@ public class JwtTokenAuthenticationProcessingFilter extends AbstractAuthenticati
 
 #### JwtHeaderTokenExtractor
 
-Simple class used to extract Authorization token from header.
+JwtHeaderTokenExtractor is very simple class used to extract Authorization token from header.
 
 ```language-java
 @Component
@@ -603,10 +605,10 @@ public class JwtHeaderTokenExtractor implements TokenExtractor {
 
 #### JwtAuthenticationProvider
 
-JwtAuthenticationProvider has following responsibilities:
+JwtAuthenticationProvider has the following responsibilities:
 
-1. Signature validation of the Access token
-2. Extract authorization claims and user identifier from Access token and use them to create UserContext
+1. Verifying Access token signature
+2. Extract identity and authorization claims from Access token and use them to create UserContext
 3. If Access token is malformed, expired or simply if token is not signed with the appropriate signing key Authentication exception will be thrown
 
 ```language-java
@@ -644,6 +646,30 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
 ```
 
 #### SkipPathRequestMatcher
+
+```JwtTokenAuthenticationProcessingFilter```  filter is configured to skip following endpoints: ```/api/auth/login``` and ```/api/auth/token```. This is achieved with ```SkipPathRequestMatcher``` implementation of ```RequestMatcher```.
+
+```language-java
+public class SkipPathRequestMatcher implements RequestMatcher {
+    private OrRequestMatcher matchers;
+    private RequestMatcher processingMatcher;
+    
+    public SkipPathRequestMatcher(List<String> pathsToSkip, String processingPath) {
+        Assert.notNull(pathsToSkip);
+        List<RequestMatcher> m = pathsToSkip.stream().map(path -> new AntPathRequestMatcher(path)).collect(Collectors.toList());
+        matchers = new OrRequestMatcher(m);
+        processingMatcher = new AntPathRequestMatcher(processingPath);
+    }
+
+    @Override
+    public boolean matches(HttpServletRequest request) {
+        if (matchers.matches(request)) {
+            return false;
+        }
+        return processingMatcher.matches(request) ? true : false;
+    }
+}
+```
 
 #### BloomFilterTokenVerifier
 
