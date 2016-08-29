@@ -1,7 +1,8 @@
 ## Table of contents:
 1. <a title="Introduction: JWT Token" href="#introduction">Introduction</a>
-2. <a title="pre-requisites" href="pre-requisites">PRE-requisites</a>
+2. <a title="pre-requisites" href="#pre-requisites">PRE-requisites</a>
 3. <a title="Spring Security: Ajax authentication" href="#ajax-authentication">Ajax authentication</a>
+4. <a title="jwt-authentication" id="#jwt-authentication">JWT Authentication</a>
 
 ### <a name="introduction" id="introduction">Introduction</a>
 
