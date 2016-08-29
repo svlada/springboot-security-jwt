@@ -49,7 +49,7 @@ Overall project structure is shown below:
 
 In the first part of this tutorial we'll implement Ajax authentication by following standard patterns found in Spring Security framework.
 
-When we talk about Ajax authentication we usually refer to process where user is supplying credentials through JSON payload sent as a part of XMLHttpRequest.
+When we talk about Ajax authentication we usually refer to process where user is supplying credentials through JSON payload that is sent as a part of XMLHttpRequest.
 
 Following is the list of components that we'll implement:
 
@@ -302,7 +302,7 @@ AuthenticationSuccessHandler interface provides contract for handling successful
 AjaxAwareAuthenticationSuccessHandler class is providing custom implementation of AuthenticationSuccessHandler interface by creating 
 JSON payload with JWT Access and Refresh tokens.
 
-```
+```language-java
 @Component
 public class AjaxAwareAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
     private final ObjectMapper mapper;
@@ -369,7 +369,7 @@ We have created factory class(```JwtTokenFactory```) to decouple token creation 
 ```JwtTokenFactory#createRefreshToken``` method creates signed JWT Refresh token.
 
 
-```
+```language-java
 @Component
 public class JwtTokenFactory {
     private final JwtSettings settings;
@@ -439,7 +439,7 @@ Please note that if you are instantiating Claims object outside of ```Jwts.build
 
 AjaxAwareAuthenticationFailureHandler is invoked by ```AjaxLoginProcessingFilter``` in case of authentication failures. You can design specific error messages based on exception type that have occurred during the authentication process.
 
-```
+```language-java
 @Component
 public class AjaxAwareAuthenticationFailureHandler implements AuthenticationFailureHandler {
     private final ObjectMapper mapper;
@@ -538,7 +538,7 @@ This filter has the following responsibilities:
 
 Please ensure that ```chain.doFilter(request, response)``` is invoked upon successful authentication. You want processing of the request to advance to the next filter, because very last one filter ```FilterSecurityInterceptor#doFilter``` is responsible to actually invoke method in your controller that is handling requested API resource.
 
-```
+```language-java
 public class JwtTokenAuthenticationProcessingFilter extends AbstractAuthenticationProcessingFilter {
     private final AuthenticationFailureHandler failureHandler;
     private final TokenExtractor tokenExtractor;
@@ -577,15 +577,39 @@ public class JwtTokenAuthenticationProcessingFilter extends AbstractAuthenticati
 }
 ```
 
+#### JwtHeaderTokenExtractor
+
+Simple class used to extract Authorization token from header.
+
+```language-java
+@Component
+public class JwtHeaderTokenExtractor implements TokenExtractor {
+    public static String HEADER_PREFIX = "Bearer ";
+
+    @Override
+    public String extract(String header) {
+        if (StringUtils.isBlank(header)) {
+            throw new AuthenticationServiceException("Authorization header cannot be blank!");
+        }
+
+        if (header.length() < HEADER_PREFIX.length()) {
+            throw new AuthenticationServiceException("Invalid authorization header size.");
+        }
+
+        return header.substring(HEADER_PREFIX.length(), header.length());
+    }
+}
+```
+
 #### JwtAuthenticationProvider
 
 JwtAuthenticationProvider has following responsibilities:
 
-1. Perform signature validation of incoming Access token.
-2. Extract authorization claims from Access token and instantiate User Context to be used by application
-3. Authentication exception is thrown if Access token is malformed, expired or simply if token is not signed with appropriate signing key
+1. Signature validation of the Access token
+2. Extract authorization claims and user identifier from Access token and use them to create UserContext
+3. If Access token is malformed, expired or simply if token is not signed with the appropriate signing key Authentication exception will be thrown
 
-```
+```language-java
 @Component
 public class JwtAuthenticationProvider implements AuthenticationProvider {
     private final JwtSettings jwtSettings;
@@ -621,8 +645,6 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
 
 #### SkipPathRequestMatcher
 
-#### JwtHeaderTokenExtractor
-
 #### BloomFilterTokenVerifier
 
 #### WebSecurityConfig
@@ -633,7 +655,7 @@ WebSecurityConfig class is where all security related configuration reside.
 1. AjaxLoginProcessingFilter
 2. JwtTokenAuthenticationProcessingFilter
 
-```
+```language-java
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
