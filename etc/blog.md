@@ -1,6 +1,7 @@
 ## Table of contents:
 1. <a title="Introduction: JWT Token" href="#introduction">Introduction</a>
-2. <a title="Spring Security: Ajax authentication" href="#ajax-authentication">Ajax authentication</a>
+2. <a title="pre-requisites" href="pre-requisites">PRE-requisites</a>
+3. <a title="Spring Security: Ajax authentication" href="#ajax-authentication">Ajax authentication</a>
 
 ### <a name="introduction" id="introduction">Introduction</a>
 
@@ -11,7 +12,7 @@ Following are two scenarios that we'll implement in this tutorial:
 1. Ajax Authentication
 2. JWT Token Authentication
 
-### PRE-requisites
+### <a name="pre-requisites" id="pre-requisites">PRE-requisites</a>
 
 Please check out the sample code/project from the following GitHub repository: https://github.com/svlada/springboot-security-jwt before you proceed.
 
