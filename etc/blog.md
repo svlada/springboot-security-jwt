@@ -781,7 +781,7 @@ public class BloomFilterTokenVerifier implements TokenVerifier {
 
 ### Conclusion
 
-Remember that loosing a JWT token is like loosing your house keys. So be careful.
+I heard people whispering that on the web that loosing a JWT token is like loosing your house keys. So be careful.
 
 ## References
 
