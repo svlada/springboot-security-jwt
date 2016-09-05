@@ -6,7 +6,7 @@
 
 ### <a name="introduction" id="introduction">Introduction</a>
 
-In this article we will implement JWT authentication with Spring Boot.
+This article will guide through the process of implementing JWT authentication with Spring Boot.
 
 Following are two scenarios that we'll implement in this tutorial:
 
@@ -15,9 +15,9 @@ Following are two scenarios that we'll implement in this tutorial:
 
 ### <a name="pre-requisites" id="pre-requisites">PRE-requisites</a>
 
-Please check out the sample code/project from the following GitHub repository: https://github.com/svlada/springboot-security-jwt before you proceed.
+Please check out the sample code/project from the following GitHub repository: https://github.com/svlada/springboot-security-jwt before you proceed reading the article.
 
-Project is configured with H2 in-memory database. Data fixtures are included so that you can test authentication process with ease.
+The Sample project is configured with the H2 in-memory database. Data fixtures are included so that you can test authentication process easily just by running sample application.
 
 Overall project structure is shown below:
 
@@ -51,7 +51,7 @@ Overall project structure is shown below:
 
 ### <a name="ajax-authentication" id="ajax-authentication">Ajax authentication</a>
 
-In the first part of this tutorial Ajax authentication is implemented by following standard patterns found in Spring Security framework.
+In the first part of this tutorial Ajax authentication is implemented by following standard patterns found in the Spring Security framework.
 
 When we talk about Ajax authentication we usually refer to process where user is supplying credentials through JSON payload that is sent as a part of XMLHttpRequest.
 
@@ -96,7 +96,7 @@ curl -X POST -H "X-Requested-With: XMLHttpRequest" -H "Content-Type: application
 
 **Ajax authentication response example**
 
-If client supplied credentials are valid, Authentication API will reply with HTTP response including the following details:
+If client supplied credentials are valid, Authentication API will reply with the HTTP response including the following details:
 
 1. HTTP status "200 OK"
 2. Signed JWT Access and Refresh tokens are included in the response body
@@ -120,7 +120,7 @@ Raw HTTP Response:
 JWT Access token can be used for authentication and authorization:
 
 1. Authentication is performed by verifying JWT Access Token signature. If signature proves to be valid, access to requested API resource is granted.
-2. Authorization is done by looking up privileges in **scope** attribute of JWT Access token.
+2. Authorization is done by looking up privileges in the **scope** attribute of JWT Access token.
 
 Decoded JWT Access token has three parts: Header, Claims and Signature as shown below:
 
@@ -191,8 +191,8 @@ First step is to extend ```AbstractAuthenticationProcessingFilter``` in order to
 
 De-serialization and basic validation of the incoming JSON payload is done in the ```AjaxLoginProcessingFilter#attemptAuthentication``` method. Upon successful validation of the JSON payload authentication logic is delegated to AjaxAuthenticationProvider class.
 
-In case of successful authentication ```AjaxLoginProcessingFilter#successfulAuthentication``` method is invoked.
-In case of application failure ```AjaxLoginProcessingFilter#unsuccessfulAuthentication``` method is invoked.
+In case of a successful authentication ```AjaxLoginProcessingFilter#successfulAuthentication``` method is invoked.
+In case of failure authentication  ```AjaxLoginProcessingFilter#unsuccessfulAuthentication``` method is invoked.
 
 ```language-java
 public class AjaxLoginProcessingFilter extends AbstractAuthenticationProcessingFilter {
@@ -249,7 +249,7 @@ public class AjaxLoginProcessingFilter extends AbstractAuthenticationProcessingF
 
 #### AjaxAuthenticationProvider
 
-Responsibility of the AjaxAuthenticationProvider class  is to:
+Responsibility of the AjaxAuthenticationProvider class is to:
 
 1. Verify user credentials against database, LDAP or some other system which holds the user data
 2. If ```username``` and ```password``` do not match the record in the database authentication exception is thrown
@@ -301,10 +301,9 @@ public class AjaxAuthenticationProvider implements AuthenticationProvider {
 
 #### AjaxAwareAuthenticationSuccessHandler
 
-AuthenticationSuccessHandler interface provides contract for handling successful user authentication.
+We'll implement AuthenticationSuccessHandler interface that is called when client has been successfully authenticated.
 
-AjaxAwareAuthenticationSuccessHandler class is providing custom implementation of AuthenticationSuccessHandler interface by creating 
-JSON payload with JWT Access and Refresh tokens.
+AjaxAwareAuthenticationSuccessHandler class is our custom implementation of AuthenticationSuccessHandler interface. Responsibility of this class is to add JSON payload containing JWT Access and Refresh tokens into the HTTP response body.
 
 ```language-java
 @Component
@@ -490,6 +489,7 @@ Some trade-offs have to be made with this approach:
 2. Access token can contain outdated authorization claims (e.g when some of the user privileges are revoked)
 3. Access tokens can grow in size in case of increased number of claims
 4. File download API can be tricky to implement
+5. True statelessness and revocation are mutually exclusive
 
 In this article we'll investigate how JWT's can used for token based authentication.
 
@@ -533,11 +533,11 @@ Let's see the implementation details. Following are components we need to implem
 
 #### JwtTokenAuthenticationProcessingFilter
 
-```JwtTokenAuthenticationProcessingFilter``` filter is applied to each API endpoint(```/api/**```) except the refresh token endpoint(```/api/auth/token```).
+```JwtTokenAuthenticationProcessingFilter``` filter is applied to each API endpoint(```/api/**```) with exception of the refresh token endpoint(```/api/auth/token```) and login endpoint(```/api/auth/login```).
 
 This filter has the following responsibilities:
 
-1. Check for access token in ```X-Authorization``` header. If Access token is found in header, delegate authentication to ```JwtAuthenticationProvider``` otherwise throw authentication exception
+1. Check for access token in ```X-Authorization``` header. If Access token is found in the header, delegate authentication to ```JwtAuthenticationProvider``` otherwise throw authentication exception
 2. Invokes success or failure strategies based on the outcome of authentication process performed by ```JwtAuthenticationProvider```
 
 Please ensure that ```chain.doFilter(request, response)``` is invoked upon successful authentication. You want processing of the request to advance to the next filter, because very last one filter ```FilterSecurityInterceptor#doFilter``` is responsible to actually invoke method in your controller that is handling requested API resource.
@@ -583,7 +583,7 @@ public class JwtTokenAuthenticationProcessingFilter extends AbstractAuthenticati
 
 #### JwtHeaderTokenExtractor
 
-JwtHeaderTokenExtractor is very simple class used to extract Authorization token from header.
+JwtHeaderTokenExtractor is very simple class used to extract Authorization token from header. You can extend ```TokenExtractor``` interface and provide your custom implementation that will for example extract token from URL.
 
 ```language-java
 @Component
@@ -673,15 +673,18 @@ public class SkipPathRequestMatcher implements RequestMatcher {
 }
 ```
 
-#### BloomFilterTokenVerifier
-
 #### WebSecurityConfig
 
-WebSecurityConfig class is where all security related configuration reside. 
+WebSecurityConfig class extends WebSecurityConfigurerAdapter to provide custom security configuration.
 
+Following beans are configured and instantiated in this class:
 
 1. AjaxLoginProcessingFilter
 2. JwtTokenAuthenticationProcessingFilter
+3. AuthenticationManager
+4. BCryptPasswordEncoder
+
+Also, inside ```WebSecurityConfig#configure(HttpSecurity http)``` method we'll configure patterns to define protected/unprotected API endpoints. Please note that we have disabled CSRF protection because we are not using Cookies.
 
 ```language-java
 @Configuration
@@ -762,7 +765,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 }
 ```
-
+#### BloomFilterTokenVerifier
 
 ### Conclusion
 
@@ -792,6 +795,6 @@ Remember that loosing a JWT token is like loosing your house keys. So be careful
 
 ### [Are breaches of JWT-based servers more damaging?](https://www.sslvpn.online/are-breaches-of-jwt-based-servers-more-damaging/)
 
-true statelessness and revocation are mutually exclusive
+
 
 
