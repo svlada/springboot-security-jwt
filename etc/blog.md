@@ -767,6 +767,18 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 ```
 #### BloomFilterTokenVerifier
 
+This is dummy class. You should ideally implement your own TokenVerifier to check for revoked tokens.
+
+```language-java
+@Component
+public class BloomFilterTokenVerifier implements TokenVerifier {
+    @Override
+    public boolean verify(String jti) {
+        return true;
+    }
+}
+```
+
 ### Conclusion
 
 Remember that loosing a JWT token is like loosing your house keys. So be careful.
