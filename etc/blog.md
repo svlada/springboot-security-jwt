@@ -6,18 +6,18 @@
 
 ### <a name="introduction" id="introduction">Introduction</a>
 
-This article will guide through the process of implementing JWT authentication with Spring Boot.
+This article will guide you on how you can implement JWT authentication with Spring Boot.
 
-Following are two scenarios that we'll implement in this tutorial:
+We will cover the following two scenarios:
 
 1. Ajax Authentication
 2. JWT Token Authentication
 
 ### <a name="pre-requisites" id="pre-requisites">PRE-requisites</a>
 
-Please check out the sample code/project from the following GitHub repository: https://github.com/svlada/springboot-security-jwt before you proceed reading the article.
+Please check out the sample code/project from the following GitHub repository: https://github.com/svlada/springboot-security-jwt before going further reading the article.
 
-The Sample project is configured with the H2 in-memory database. Data fixtures are included so that you can test authentication process easily just by running sample application.
+This project is using H2 in-memory database to store sample user information. To make things easier I have created data fixtures and configured Spring Boot to automatically load them on the application startup(```/jwt-demo/src/main/resources/data.sql```).
 
 Overall project structure is shown below:
 
@@ -51,9 +51,9 @@ Overall project structure is shown below:
 
 ### <a name="ajax-authentication" id="ajax-authentication">Ajax authentication</a>
 
-In the first part of this tutorial Ajax authentication is implemented by following standard patterns found in the Spring Security framework.
-
 When we talk about Ajax authentication we usually refer to process where user is supplying credentials through JSON payload that is sent as a part of XMLHttpRequest.
+
+In the first part of this tutorial Ajax authentication is implemented by following standard patterns found in the Spring Security framework.
 
 Following is the list of components that we'll implement:
 
@@ -68,7 +68,9 @@ Before we get to the details of the implementation, let's look at the request/re
 
 **Ajax authentication request example**
 
-Client initiates authentication process by invoking Authentication API endpoint(```/api/auth/login```). Credentials are included in the request payload.
+The Authentication API allows user to pass in credentials in order to receive authentication token.
+
+In our example, client initiates authentication process by invoking Authentication API endpoint(```/api/auth/login```).
 
 Raw HTTP request:
 
@@ -96,14 +98,14 @@ curl -X POST -H "X-Requested-With: XMLHttpRequest" -H "Content-Type: application
 
 **Ajax authentication response example**
 
-If client supplied credentials are valid, Authentication API will reply with the HTTP response including the following details:
+If client supplied credentials are valid, Authentication API will respond with the HTTP response including the following details:
 
 1. HTTP status "200 OK"
 2. Signed JWT Access and Refresh tokens are included in the response body
 
 **JWT Access token** - used to authenticate against protected API resources. It must be set in ```X-Authorization``` header.
 
-**JWT Refresh token** - used to acquire new Access Token. Following API endpoint ```/api/auth/token``` is handling refresh token.
+**JWT Refresh token** - used to acquire new Access Token. Token refresh is handled by the following API endpoint: ```/api/auth/token```.
 
 Raw HTTP Response:
 
@@ -367,9 +369,9 @@ Make sure that ```JJWT``` dependency is included in your ```pom.xml```.
 
 We have created factory class(```JwtTokenFactory```) to decouple token creation logic.
 
-```JwtTokenFactory#createAccessJwtToken``` method creates signed JWT Access token.
+Method ```JwtTokenFactory#createAccessJwtToken```  creates signed JWT Access token.
 
-```JwtTokenFactory#createRefreshToken``` method creates signed JWT Refresh token.
+Method ```JwtTokenFactory#createRefreshToken``` creates signed JWT Refresh token.
 
 
 ```language-java
@@ -495,7 +497,7 @@ In this article we'll investigate how JWT's can used for token based authenticat
 
 JWT Authentication flow is very simple: 
 
-1. User obtains Refresh and Access tokens by providing credentials to Authorization server
+1. User obtains Refresh and Access tokens by providing credentials to the Authorization server
 2. User sends Access token with each request to access protected API resource
 3. Access token is signed and contains user identity(e.g. user id) and authorization claims. 
 
@@ -533,7 +535,7 @@ Let's see the implementation details. Following are components we need to implem
 
 #### JwtTokenAuthenticationProcessingFilter
 
-```JwtTokenAuthenticationProcessingFilter``` filter is applied to each API endpoint(```/api/**```) with exception of the refresh token endpoint(```/api/auth/token```) and login endpoint(```/api/auth/login```).
+JwtTokenAuthenticationProcessingFilter filter is applied to each API (```/api/**```) with exception of the refresh token endpoint(```/api/auth/token```) and login endpoint(```/api/auth/login```).
 
 This filter has the following responsibilities:
 
@@ -583,7 +585,7 @@ public class JwtTokenAuthenticationProcessingFilter extends AbstractAuthenticati
 
 #### JwtHeaderTokenExtractor
 
-JwtHeaderTokenExtractor is very simple class used to extract Authorization token from header. You can extend ```TokenExtractor``` interface and provide your custom implementation that will for example extract token from URL.
+JwtHeaderTokenExtractor is very simple class used to extract Authorization token from header. You can extend TokenExtractor interface and provide your custom implementation that will for example extract token from URL.
 
 ```language-java
 @Component
@@ -609,7 +611,7 @@ public class JwtHeaderTokenExtractor implements TokenExtractor {
 
 JwtAuthenticationProvider has the following responsibilities:
 
-1. Verifying Access token signature
+1. Verify the access token's signature
 2. Extract identity and authorization claims from Access token and use them to create UserContext
 3. If Access token is malformed, expired or simply if token is not signed with the appropriate signing key Authentication exception will be thrown
 
@@ -649,7 +651,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
 
 #### SkipPathRequestMatcher
 
-```JwtTokenAuthenticationProcessingFilter```  filter is configured to skip following endpoints: ```/api/auth/login``` and ```/api/auth/token```. This is achieved with ```SkipPathRequestMatcher``` implementation of ```RequestMatcher```.
+JwtTokenAuthenticationProcessingFilter  filter is configured to skip following endpoints: ```/api/auth/login``` and ```/api/auth/token```. This is achieved with ```SkipPathRequestMatcher``` implementation of ```RequestMatcher```.
 
 ```language-java
 public class SkipPathRequestMatcher implements RequestMatcher {
@@ -781,7 +783,7 @@ public class BloomFilterTokenVerifier implements TokenVerifier {
 
 ### Conclusion
 
-I heard people whispering that on the web that loosing a JWT token is like loosing your house keys. So be careful.
+I heard people whispering on the web that loosing a JWT token is like loosing your house keys. So be careful.
 
 ## References
 
