@@ -17,7 +17,7 @@ We will cover the following two scenarios:
 
 Please check out the sample code/project from the following GitHub repository: https://github.com/svlada/springboot-security-jwt before going further reading the article.
 
-This project is using H2 in-memory database to store sample user information. To make things easier I have created data fixtures and configured Spring Boot to automatically load them on the application startup(```/jwt-demo/src/main/resources/data.sql```).
+This project is using H2 in-memory database to store sample user information. To make things easier I have created data fixtures and configured Spring Boot to automatically load them on the application startup (```/jwt-demo/src/main/resources/data.sql```).
 
 Overall project structure is shown below:
 
@@ -70,7 +70,7 @@ Before we get to the details of the implementation, let's look at the request/re
 
 The Authentication API allows user to pass in credentials in order to receive authentication token.
 
-In our example, client initiates authentication process by invoking Authentication API endpoint(```/api/auth/login```).
+In our example, client initiates authentication process by invoking Authentication API endpoint (```/api/auth/login```).
 
 Raw HTTP request:
 
@@ -367,7 +367,7 @@ Make sure that ```JJWT``` dependency is included in your ```pom.xml```.
 </dependency>
 ```
 
-We have created factory class(```JwtTokenFactory```) to decouple token creation logic.
+We have created factory class (```JwtTokenFactory```) to decouple token creation logic.
 
 Method ```JwtTokenFactory#createAccessJwtToken```  creates signed JWT Access token.
 
@@ -499,9 +499,9 @@ JWT Authentication flow is very simple:
 
 1. User obtains Refresh and Access tokens by providing credentials to the Authorization server
 2. User sends Access token with each request to access protected API resource
-3. Access token is signed and contains user identity(e.g. user id) and authorization claims. 
+3. Access token is signed and contains user identity (e.g. user id) and authorization claims. 
 
-It's important to note that authorization claims will be included with the Access token. Why is this important? Well, let's say that authorization claims(e.g user privileges in the database) are changed during the life time of Access token. Those changes will not become effective until new Access token is issued. In most cases this is not big issue, because Access tokens are short-lived. Otherwise go with the opaque token pattern.
+It's important to note that authorization claims will be included with the Access token. Why is this important? Well, let's say that authorization claims (e.g user privileges in the database) are changed during the life time of Access token. Those changes will not become effective until new Access token is issued. In most cases this is not big issue, because Access tokens are short-lived. Otherwise go with the opaque token pattern.
 
 Before we get to the details of the implementation, let's look the sample request to protected API resource.
 
@@ -509,7 +509,7 @@ Before we get to the details of the implementation, let's look the sample reques
 
 Following pattern should be used when sending access tokens: ```<header-name> Bearer <access_token>```.
 
-In our example for header name(```<header-name>```) we are using ```X-Authorization```.
+In our example for header name (```<header-name>```) we are using ```X-Authorization```.
 
 Raw HTTP request:
 ```
@@ -535,7 +535,7 @@ Let's see the implementation details. Following are components we need to implem
 
 #### JwtTokenAuthenticationProcessingFilter
 
-JwtTokenAuthenticationProcessingFilter filter is applied to each API (```/api/**```) with exception of the refresh token endpoint(```/api/auth/token```) and login endpoint(```/api/auth/login```).
+JwtTokenAuthenticationProcessingFilter filter is applied to each API (```/api/**```) with exception of the refresh token endpoint (```/api/auth/token```) and login endpoint (```/api/auth/login```).
 
 This filter has the following responsibilities:
 
