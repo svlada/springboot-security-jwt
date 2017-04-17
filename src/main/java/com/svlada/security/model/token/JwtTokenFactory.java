@@ -1,11 +1,13 @@
 package com.svlada.security.model.token;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -50,13 +52,15 @@ public class JwtTokenFactory {
         Claims claims = Jwts.claims().setSubject(userContext.getUsername());
         claims.put("scopes", userContext.getAuthorities().stream().map(s -> s.toString()).collect(Collectors.toList()));
 
-        DateTime currentTime = new DateTime();
-
+        LocalDateTime currentTime = LocalDateTime.now();
+        
         String token = Jwts.builder()
           .setClaims(claims)
           .setIssuer(settings.getTokenIssuer())
-          .setIssuedAt(currentTime.toDate())
-          .setExpiration(currentTime.plusMinutes(settings.getTokenExpirationTime()).toDate())
+          .setIssuedAt(Date.from(currentTime.atZone(ZoneId.systemDefault()).toInstant()))
+          .setExpiration(Date.from(currentTime
+              .plusMinutes(settings.getTokenExpirationTime())
+              .atZone(ZoneId.systemDefault()).toInstant()))
           .signWith(SignatureAlgorithm.HS512, settings.getTokenSigningKey())
         .compact();
 
@@ -68,7 +72,7 @@ public class JwtTokenFactory {
             throw new IllegalArgumentException("Cannot create JWT Token without username");
         }
 
-        DateTime currentTime = new DateTime();
+        LocalDateTime currentTime = LocalDateTime.now();
 
         Claims claims = Jwts.claims().setSubject(userContext.getUsername());
         claims.put("scopes", Arrays.asList(Scopes.REFRESH_TOKEN.authority()));
@@ -77,8 +81,10 @@ public class JwtTokenFactory {
           .setClaims(claims)
           .setIssuer(settings.getTokenIssuer())
           .setId(UUID.randomUUID().toString())
-          .setIssuedAt(currentTime.toDate())
-          .setExpiration(currentTime.plusMinutes(settings.getRefreshTokenExpTime()).toDate())
+          .setIssuedAt(Date.from(currentTime.atZone(ZoneId.systemDefault()).toInstant()))
+          .setExpiration(Date.from(currentTime
+              .plusMinutes(settings.getRefreshTokenExpTime())
+              .atZone(ZoneId.systemDefault()).toInstant()))
           .signWith(SignatureAlgorithm.HS512, settings.getTokenSigningKey())
         .compact();
 
