@@ -4,5 +4,5 @@
     <logger name="org.springframework.web" level="DEBUG"/>     
     <logger name="org.springframework.security" level="DEBUG"/>
     <logger name="org.springframework" level="ERROR"/>
-    <logger name="com.svlada" level="ALL"/>
+    <logger name="com.svlada" level="DEBUG"/>
 </configuration>
