@@ -29,13 +29,17 @@ import com.svlada.user.service.DatabaseUserService;
  */
 @Component
 public class AjaxAuthenticationProvider implements AuthenticationProvider {
-    private final BCryptPasswordEncoder encoder;
+    private BCryptPasswordEncoder encoder;
     private final DatabaseUserService userService;
 
     @Autowired
-    public AjaxAuthenticationProvider(final DatabaseUserService userService, final BCryptPasswordEncoder encoder) {
-        this.userService = userService;
+    public void setProjectRepository(final BCryptPasswordEncoder encoder) {
         this.encoder = encoder;
+    }
+
+    @Autowired
+    public AjaxAuthenticationProvider(final DatabaseUserService userService) {
+        this.userService = userService;
     }
 
     @Override
